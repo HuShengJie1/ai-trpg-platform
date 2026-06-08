@@ -1,0 +1,19 @@
+name: Project Task
+description: Track an AI TRPG Platform development task.
+title: "[Task] "
+labels: ["status: todo"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should be done?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is included and excluded?
+    validations:
+      required: false

@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+alembic
+psycopg[binary]
+python-dotenv
+
+# Planned for MVP-2 PDF parsing.
+PyMuPDF
