@@ -62,6 +62,16 @@ ai-trpg-platform/
 4. MVP-4: 规则查询、AI 规则问答、论坛分类、帖子和回帖
 5. MVP-5: 前端页面整合与完整跑团体验
 
+## 本地数据库
+
+当前早期 MVP 开发优先使用本机已经安装好的 PostgreSQL，不要求安装 Docker。请先在本地 PostgreSQL 中创建开发数据库，并按 `.env.example` 配置 `.env`：
+
+```text
+DATABASE_URL=postgresql+psycopg://postgres:Daodao0708@localhost:5432/ai_trpg_platform
+```
+
+Docker 仍保留为可选方案，主要用于后续统一开发环境、部署、pgvector 验证或多人协作。
+
 ## 后端启动
 
 ```bash
@@ -92,13 +102,17 @@ npm run dev
 http://localhost:3000
 ```
 
-## Docker 启动
+## Docker 可选方案
+
+当前开发不需要 Docker。如果你已经在本机安装 PostgreSQL，可以直接使用本地数据库。
+
+保留 `docker-compose.yml` 是为了后续统一环境、部署、pgvector 或多人协作。需要时可以再启动：
 
 ```bash
 docker compose up -d
 ```
 
-PostgreSQL 默认连接:
+Docker PostgreSQL 默认连接:
 
 ```text
 postgresql+psycopg://postgres:postgres@localhost:5432/ai_trpg

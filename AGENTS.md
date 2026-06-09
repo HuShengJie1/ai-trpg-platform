@@ -194,6 +194,13 @@ The backend uses:
 * PyMuPDF for PDF parsing
 * uv for Python environment and dependency management
 
+Development environment rules:
+
+* Do not assume Docker is installed.
+* Prefer local PostgreSQL if the developer has already installed it.
+* Docker is optional during early MVP development.
+* Keep docker-compose.yml for future use.
+
 Backend code layout rules:
 
 ```text

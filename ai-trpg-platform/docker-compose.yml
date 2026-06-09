@@ -1,3 +1,5 @@
+# Optional local stack for future shared development, deployment, pgvector checks,
+# or multi-developer environments. Early MVP development can use local PostgreSQL.
 services:
   postgres:
     image: pgvector/pgvector:pg16
