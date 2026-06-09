@@ -1,18 +1,17 @@
 # Database Design / 数据库设计
 
-本文件只描述数据库表设计，不创建真实 SQLAlchemy 模型或 Alembic migration。
+本文件描述数据库表设计。当前已实现 `users` 表的 SQLAlchemy model 和 Alembic migration，其他表仍是后续设计。
 
-## 1. user
+## 1. users
 
 | 字段名 | 字段含义 | 简单说明 |
 | --- | --- | --- |
 | id | 用户 ID | 主键 |
 | username | 用户名 | 唯一显示名或登录名 |
 | email | 邮箱 | 唯一登录邮箱 |
-| hashed_password | 密码哈希 | MVP-1 实现，不保存明文 |
-| display_name | 昵称 | 页面展示名称 |
+| password_hash | 密码哈希 | 不保存明文密码 |
+| role | 用户角色 | 默认 `player` |
 | avatar_url | 头像地址 | 可为空 |
-| is_active | 是否启用 | 账号状态 |
 | created_at | 创建时间 | 记录注册时间 |
 | updated_at | 更新时间 | 记录资料更新时间 |
 

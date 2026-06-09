@@ -31,7 +31,8 @@ ai-trpg-platform/
 │   │   ├── services/
 │   │   └── main.py
 │   ├── alembic/
-│   ├── requirements.txt
+│   ├── pyproject.toml
+│   ├── uv.lock
 │   └── README.md
 ├── docs/
 ├── uploads/modules/
@@ -44,17 +45,18 @@ ai-trpg-platform/
 
 ## 当前范围
 
-项目已完成基础框架初始化，并新增前端 Auth 模块：
+项目已完成基础框架初始化，并新增 Auth 模块：
 
 - 创建前后端目录结构
 - 创建 FastAPI 基础入口和路由占位
 - 创建 Next.js 基础首页
 - 创建 PostgreSQL docker-compose
 - 创建环境变量示例、忽略规则和设计文档
+- 创建后端用户注册、登录、JWT 鉴权和当前用户接口
 - 创建前端注册、登录、我的账号页面
 - 创建前端 Auth API 封装和 `localStorage` token 保存
 
-当前不包含角色卡、投骰、模组、PDF、AI、规则查询或论坛前端功能。
+当前不包含角色卡、投骰、模组、PDF、AI、规则查询或论坛功能。
 
 ## 后续开发路线
 
@@ -69,7 +71,7 @@ ai-trpg-platform/
 当前早期 MVP 开发优先使用本机已经安装好的 PostgreSQL，不要求安装 Docker。请先在本地 PostgreSQL 中创建开发数据库，并按 `.env.example` 配置 `.env`：
 
 ```text
-DATABASE_URL=postgresql+psycopg://postgres:Daodao0708@localhost:5432/ai_trpg_platform
+DATABASE_URL=postgresql+psycopg://postgres:YOUR_PASSWORD@localhost:5432/ai_trpg_platform
 ```
 
 Docker 仍保留为可选方案，主要用于后续统一开发环境、部署、pgvector 验证或多人协作。
@@ -78,16 +80,23 @@ Docker 仍保留为可选方案，主要用于后续统一开发环境、部署�
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+uv sync
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload
 ```
 
 Health check:
 
 ```bash
 curl http://localhost:8000/health
+```
+
+Auth endpoints:
+
+```text
+POST http://127.0.0.1:8000/auth/register
+POST http://127.0.0.1:8000/auth/login
+GET  http://127.0.0.1:8000/auth/me
 ```
 
 ## 前端启动
