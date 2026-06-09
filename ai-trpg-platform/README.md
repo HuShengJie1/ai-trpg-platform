@@ -44,15 +44,17 @@ ai-trpg-platform/
 
 ## 当前范围
 
-本次只完成项目框架初始化：
+项目已完成基础框架初始化，并新增前端 Auth 模块：
 
 - 创建前后端目录结构
 - 创建 FastAPI 基础入口和路由占位
 - 创建 Next.js 基础首页
 - 创建 PostgreSQL docker-compose
 - 创建环境变量示例、忽略规则和设计文档
+- 创建前端注册、登录、我的账号页面
+- 创建前端 Auth API 封装和 `localStorage` token 保存
 
-当前不包含完整业务代码、真实用户认证、数据库模型、AI API 调用、PDF 解析逻辑或版权规则书内容。
+当前不包含角色卡、投骰、模组、PDF、AI、规则查询或论坛前端功能。
 
 ## 后续开发路线
 
@@ -101,6 +103,28 @@ npm run dev
 ```text
 http://localhost:3000
 ```
+
+前端 Auth 页面:
+
+```text
+http://localhost:3000/register
+http://localhost:3000/login
+http://localhost:3000/me
+```
+
+前端默认调用后端:
+
+```text
+http://127.0.0.1:8000
+```
+
+如需覆盖后端地址，在 `frontend/.env.local` 中配置:
+
+```text
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+```
+
+不要提交真实的 `frontend/.env.local`。
 
 ## Docker 可选方案
 
