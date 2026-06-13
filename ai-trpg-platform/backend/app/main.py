@@ -27,7 +27,7 @@ async def health_check() -> dict[str, str]:
 
 
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(characters.router, prefix="/characters", tags=["Characters"])
+app.include_router(characters.router, prefix="/characters", tags=["characters"])
 app.include_router(dice.router, prefix="/dice", tags=["Dice"])
 app.include_router(modules.router, prefix="/modules", tags=["Modules"])
 app.include_router(campaigns.router, prefix="/campaigns", tags=["Campaigns"])

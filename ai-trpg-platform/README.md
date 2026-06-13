@@ -45,7 +45,7 @@ ai-trpg-platform/
 
 ## 当前范围
 
-项目已完成基础框架初始化，并新增 Auth 模块和多规则角色卡前端：
+项目已完成基础框架初始化，并新增 Auth 模块、多规则角色卡前端和多规则角色卡后端：
 
 - 创建前后端目录结构
 - 创建 FastAPI 基础入口和路由占位
@@ -53,6 +53,7 @@ ai-trpg-platform/
 - 创建 PostgreSQL docker-compose
 - 创建环境变量示例、忽略规则和设计文档
 - 创建后端用户注册、登录、JWT 鉴权和当前用户接口
+- 创建后端多规则角色卡模块，支持 COC7 与 DND5E
 - 创建前端注册、登录、我的账号页面
 - 创建前端 Auth API 封装和 `localStorage` token 保存
 - 创建前端角色卡列表、规则选择、COC7 表单、DND5E 表单、详情和编辑页面
@@ -100,6 +101,30 @@ POST http://127.0.0.1:8000/auth/register
 POST http://127.0.0.1:8000/auth/login
 GET  http://127.0.0.1:8000/auth/me
 ```
+
+Character endpoints:
+
+```text
+GET    http://127.0.0.1:8000/characters/rules
+POST   http://127.0.0.1:8000/characters/coc7
+POST   http://127.0.0.1:8000/characters/dnd5e
+GET    http://127.0.0.1:8000/characters
+GET    http://127.0.0.1:8000/characters/{id}
+PUT    http://127.0.0.1:8000/characters/coc7/{id}
+PUT    http://127.0.0.1:8000/characters/dnd5e/{id}
+DELETE http://127.0.0.1:8000/characters/{id}
+```
+
+Character backend validation flow:
+
+1. Register a user.
+2. Log in and copy the bearer token.
+3. Call `GET /characters/rules`.
+4. Use `POST /characters/coc7` to create a COC7 character.
+5. Use `POST /characters/dnd5e` to create a DND5E character.
+6. Use `GET /characters` and `GET /characters/{id}` to verify list and detail responses.
+7. Use the matching rule-specific `PUT` endpoint to update a character.
+8. Use `DELETE /characters/{id}` to delete a character.
 
 ## 前端启动
 

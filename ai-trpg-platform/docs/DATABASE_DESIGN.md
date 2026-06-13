@@ -1,6 +1,6 @@
 # Database Design / 数据库设计
 
-本文件描述数据库表设计。当前已实现 `users` 表的 SQLAlchemy model 和 Alembic migration，其他表仍是后续设计。
+本文件描述数据库表设计。当前已实现 `users` 表，以及多规则角色卡相关的 `characters`、`coc7_character_sheets`、`dnd5e_character_sheets` 表。
 
 ## 1. users
 
@@ -15,17 +15,62 @@
 | created_at | 创建时间 | 记录注册时间 |
 | updated_at | 更新时间 | 记录资料更新时间 |
 
-## 2. character
+## 2. characters
 
 | 字段名 | 字段含义 | 简单说明 |
 | --- | --- | --- |
-| id | 角色 ID | 主键 |
-| user_id | 所属用户 | 外键到 user |
-| name | 角色名 | 角色展示名称 |
-| system | 规则系统 | 例如 CoC、D&D 或自定义 |
-| summary | 角色简介 | 简短描述 |
-| sheet_data | 车卡数据 | JSON，保存属性、技能、物品等 |
-| is_archived | 是否归档 | 隐藏旧角色 |
+| id | 公共角色 ID | 主键 |
+| user_id | 所属用户 | 外键到 `users.id` |
+| rule_system | 规则系统 | 第一版支持 `coc7` 和 `dnd5e` |
+| name | 角色名 | 所有规则通用的展示名称 |
+| created_at | 创建时间 | 记录创建时间 |
+| updated_at | 更新时间 | 记录更新时间 |
+
+`characters` 只保存所有规则共用的字段。不同规则系统的完整角色卡字段不放在同一个 `sheet_json` 字段中，而是通过 `rule_system` 查询对应的规则专属表。
+
+## 2.1. coc7_character_sheets
+
+| 字段名 | 字段含义 | 简单说明 |
+| --- | --- | --- |
+| id | COC7 角色卡 ID | 主键 |
+| character_id | 公共角色 ID | 外键到 `characters.id`，唯一 |
+| occupation | 职业 | 可为空 |
+| age | 年龄 | 可为空 |
+| gender | 性别 | 可为空 |
+| residence | 居住地 | 可为空 |
+| birthplace | 出生地 | 可为空 |
+| background | 背景摘要 | 可为空，不存放版权规则书文本 |
+| str/con/siz/dex/app/int/pow/edu/luck | COC7 属性 | 基础校验范围为 0 到 100 |
+| hp/mp/san/build/damage_bonus/move | 衍生属性 | 当前只做存储，不自动计算 |
+| skills_json | 技能数据 | JSON |
+| equipment_json | 装备数据 | JSON |
+| backstory_json | 背景故事数据 | JSON |
+| status_json | 状态数据 | JSON |
+| created_at | 创建时间 | 记录创建时间 |
+| updated_at | 更新时间 | 记录更新时间 |
+
+## 2.2. dnd5e_character_sheets
+
+| 字段名 | 字段含义 | 简单说明 |
+| --- | --- | --- |
+| id | DND5E 角色卡 ID | 主键 |
+| character_id | 公共角色 ID | 外键到 `characters.id`，唯一 |
+| race | 种族 | 可为空 |
+| class_name | 职业名 | 避免使用 Python 保留字 `class` |
+| subclass | 子职业 | 可为空 |
+| level | 等级 | 基础校验范围为 1 到 20 |
+| background | 背景摘要 | 可为空，不存放版权规则书文本 |
+| alignment | 阵营 | 可为空 |
+| player_name | 玩家名 | 可为空 |
+| experience_points | 经验值 | 非负整数 |
+| strength/dexterity/constitution/intelligence/wisdom/charisma | 六维属性 | 基础校验范围为 1 到 30 |
+| armor_class/initiative/speed/max_hp/current_hp/temporary_hp/hit_dice | 战斗字段 | 当前只做存储，不自动计算 |
+| proficiencies_json | 熟练项数据 | JSON |
+| skills_json | 技能数据 | JSON |
+| equipment_json | 装备数据 | JSON |
+| spellcasting_json | 法术数据 | JSON |
+| features_json | 特性数据 | JSON |
+| status_json | 状态数据 | JSON |
 | created_at | 创建时间 | 记录创建时间 |
 | updated_at | 更新时间 | 记录更新时间 |
 
@@ -103,7 +148,7 @@
 | --- | --- | --- |
 | id | 关系 ID | 主键 |
 | campaign_id | 战役 ID | 外键到 campaign |
-| character_id | 角色 ID | 外键到 character |
+| character_id | 角色 ID | 外键到 characters |
 | user_id | 玩家 ID | 外键到 user |
 | role | 战役身份 | player/gm/observer |
 | joined_at | 加入时间 | 记录加入时间 |

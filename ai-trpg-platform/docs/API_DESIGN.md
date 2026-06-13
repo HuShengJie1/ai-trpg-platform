@@ -1,6 +1,6 @@
 # API Design / API 设计
 
-本文件描述接口设计。当前已实现 Auth 接口和 `GET /health`，其他业务接口仍是后续设计。
+本文件描述接口设计。当前已实现 Auth 接口、角色车卡接口和 `GET /health`，其他业务接口仍是后续设计。
 
 ## Auth
 
@@ -73,11 +73,93 @@ Response matches the register user response. Missing or invalid tokens return `4
 
 | Method | Path | 说明 |
 | --- | --- | --- |
-| POST | `/characters` | 创建角色车卡 |
+| GET | `/characters/rules` | 获取支持的角色规则系统 |
+| POST | `/characters/coc7` | 创建当前登录用户的 COC7 角色卡 |
+| POST | `/characters/dnd5e` | 创建当前登录用户的 DND5E 角色卡 |
 | GET | `/characters` | 获取当前用户角色列表 |
 | GET | `/characters/{id}` | 获取角色详情 |
-| PUT | `/characters/{id}` | 更新角色车卡 |
-| DELETE | `/characters/{id}` | 删除或归档角色 |
+| PUT | `/characters/coc7/{id}` | 更新当前登录用户的 COC7 角色卡 |
+| PUT | `/characters/dnd5e/{id}` | 更新当前登录用户的 DND5E 角色卡 |
+| DELETE | `/characters/{id}` | 删除角色 |
+
+All character write, list, detail, update, and delete endpoints except `/characters/rules` require:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+### GET `/characters/rules`
+
+Response:
+
+```json
+[
+  {
+    "id": "coc7",
+    "name": "COC7",
+    "description": "Call of Cthulhu 7th Edition character sheet"
+  },
+  {
+    "id": "dnd5e",
+    "name": "DND5E",
+    "description": "Dungeons & Dragons 5th Edition character sheet"
+  }
+]
+```
+
+### POST `/characters/coc7`
+
+Creates one row in `characters` and one row in `coc7_character_sheets`.
+
+Request includes the public `name` plus COC7-specific fields:
+
+```json
+{
+  "name": "Dr. Armitage",
+  "occupation": "Professor",
+  "str": 50,
+  "con": 55,
+  "siz": 60,
+  "dex": 45,
+  "app": 40,
+  "int": 80,
+  "pow": 65,
+  "edu": 75,
+  "luck": 70,
+  "skills_json": {}
+}
+```
+
+COC7 attributes are validated from 0 to 100.
+
+### POST `/characters/dnd5e`
+
+Creates one row in `characters` and one row in `dnd5e_character_sheets`.
+
+Request includes the public `name` plus DND5E-specific fields:
+
+```json
+{
+  "name": "Mira",
+  "race": "Human",
+  "class_name": "Fighter",
+  "level": 3,
+  "strength": 16,
+  "dexterity": 12,
+  "constitution": 14,
+  "intelligence": 10,
+  "wisdom": 11,
+  "charisma": 13
+}
+```
+
+DND5E `level` is validated from 1 to 20. Ability scores are validated from 1 to 30.
+
+### Character Responses
+
+List items include `id`, `user_id`, `rule_system`, `name`, `summary`, `created_at`, and `updated_at`.
+
+Detail responses include the same public character fields plus `sheet`, which contains the matching rule-specific sheet. Users can only access their own characters. Missing or cross-user characters return `404`. Updating through the wrong rule-specific endpoint returns `400`.
 
 ## Dice
 

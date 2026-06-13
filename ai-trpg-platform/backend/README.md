@@ -33,8 +33,10 @@ This backend currently contains project scaffolding and the MVP-1 Auth backend:
 - User registration with hashed passwords
 - User login with JWT bearer tokens
 - `GET /auth/me` current-user endpoint
+- Multi-rule character backend for COC7 and DND5E
+- Public `characters` table plus rule-specific `coc7_character_sheets` and `dnd5e_character_sheets`
 
-Character sheets, dice, modules, PDF parsing, AI calls, rules, and forum features will be implemented in later MVP phases.
+Dice, modules, PDF parsing, AI calls, rules, and forum features will be implemented in later MVP phases.
 
 ## Auth API
 
@@ -60,6 +62,37 @@ Current user:
 curl http://127.0.0.1:8000/auth/me \
   -H "Authorization: Bearer <access_token>"
 ```
+
+## Character API
+
+Supported rules:
+
+```bash
+curl http://127.0.0.1:8000/characters/rules
+```
+
+Create and manage characters with a bearer token:
+
+```text
+POST   /characters/coc7
+POST   /characters/dnd5e
+GET    /characters
+GET    /characters/{id}
+PUT    /characters/coc7/{id}
+PUT    /characters/dnd5e/{id}
+DELETE /characters/{id}
+```
+
+Validation flow:
+
+1. Register a user.
+2. Log in and get `access_token`.
+3. Call `GET /characters/rules`.
+4. Use `POST /characters/coc7` to create a COC7 sheet.
+5. Use `POST /characters/dnd5e` to create a DND5E sheet.
+6. Use `GET /characters` and `GET /characters/{id}` to verify list and detail responses.
+7. Use the matching rule-specific `PUT` endpoint to update a character.
+8. Use `DELETE /characters/{id}` to delete a character.
 
 Run tests:
 
