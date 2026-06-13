@@ -45,7 +45,7 @@ ai-trpg-platform/
 
 ## 当前范围
 
-项目已完成基础框架初始化，并新增 Auth 模块：
+项目已完成基础框架初始化，并新增 Auth 模块和多规则角色卡前端：
 
 - 创建前后端目录结构
 - 创建 FastAPI 基础入口和路由占位
@@ -55,8 +55,10 @@ ai-trpg-platform/
 - 创建后端用户注册、登录、JWT 鉴权和当前用户接口
 - 创建前端注册、登录、我的账号页面
 - 创建前端 Auth API 封装和 `localStorage` token 保存
+- 创建前端角色卡列表、规则选择、COC7 表单、DND5E 表单、详情和编辑页面
+- 创建前端 Character API 封装，复用已有 Auth token
 
-当前不包含角色卡、投骰、模组、PDF、AI、规则查询或论坛功能。
+当前不包含投骰、模组、PDF、AI、规则查询或论坛功能。
 
 ## 后续开发路线
 
@@ -119,6 +121,28 @@ http://localhost:3000
 http://localhost:3000/register
 http://localhost:3000/login
 http://localhost:3000/me
+```
+
+前端角色卡页面:
+
+```text
+http://localhost:3000/characters
+http://localhost:3000/characters/new
+http://localhost:3000/characters/new/coc7
+http://localhost:3000/characters/new/dnd5e
+```
+
+多规则角色卡前端验证流程:
+
+```text
+1. 登录。
+2. 进入 /characters。
+3. 点击创建角色。
+4. 选择 COC7 并创建角色。
+5. 查看并编辑 COC7 角色。
+6. 返回创建角色，选择 DND5E 并创建角色。
+7. 查看并编辑 DND5E 角色。
+8. 删除角色。
 ```
 
 前端默认调用后端:

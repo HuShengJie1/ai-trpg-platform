@@ -47,6 +47,9 @@ export default function Navbar() {
 
           {hasToken ? (
             <>
+              <Link className="text-gray-600 hover:text-gray-950" href="/characters">
+                角色卡
+              </Link>
               <Link className="text-gray-600 hover:text-gray-950" href="/me">
                 我的账号
               </Link>
