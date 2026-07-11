@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -7,6 +8,8 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.models.coc7_occupation import Coc7Occupation
 from app.services.coc7_occupation_service import (
+    MissingOccupationAttributeError,
+    calculate_occupation_skill_points,
     import_coc7_occupations,
     load_coc7_occupation_records,
     parse_credit_range,
@@ -35,6 +38,66 @@ def test_parse_choice_skill_points_formula_with_note():
 
 def test_parse_credit_range_with_note():
     assert parse_credit_range("10-80（取决于收入）") == (10, 80, "取决于收入")
+
+
+def test_calculate_fixed_and_sum_skill_points():
+    fixed = calculate_occupation_skill_points(
+        {"type": "fixed", "terms": [{"attribute": "edu", "multiplier": 4}]},
+        {"edu": 65},
+        "教育×4",
+    )
+    summed = calculate_occupation_skill_points(
+        {
+            "type": "sum",
+            "terms": [
+                {"attribute": "edu", "multiplier": 2},
+                {"attribute": "dex", "multiplier": 2},
+            ],
+        },
+        {"edu": 60, "dex": 70},
+        "教育×2＋敏捷×2",
+    )
+
+    assert fixed.total == 260
+    assert fixed.calculation == "65×4"
+    assert fixed.selected_attribute is None
+    assert summed.total == 260
+    assert summed.calculation == "60×2＋70×2"
+
+
+def test_calculate_choice_uses_maximum_and_formula_order_for_ties():
+    formula = {
+        "type": "choice",
+        "terms": [
+            {"attribute": "edu", "multiplier": 2},
+            {"choose_one": ["str", "dex"], "multiplier": 2},
+        ],
+    }
+
+    maximum = calculate_occupation_skill_points(
+        formula,
+        {"edu": 60, "str": 65, "dex": 75},
+        "教育×2＋力量或敏捷×2",
+    )
+    tied = calculate_occupation_skill_points(
+        formula,
+        {"edu": 60, "str": 70, "dex": 70},
+        "教育×2＋力量或敏捷×2",
+    )
+
+    assert maximum.selected_attribute == "dex"
+    assert maximum.total == 270
+    assert tied.selected_attribute == "str"
+    assert tied.total == 260
+
+
+def test_calculate_skill_points_rejects_missing_formula_attribute():
+    with pytest.raises(MissingOccupationAttributeError):
+        calculate_occupation_skill_points(
+            {"type": "fixed", "terms": [{"attribute": "edu", "multiplier": 4}]},
+            {"edu": 0},
+            "教育×4",
+        )
 
 
 def test_load_and_import_coc7_occupations(tmp_path):

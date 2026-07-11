@@ -19,6 +19,7 @@ from app.services.coc7_character_service import (
     get_coc7_character,
     update_coc7_character,
 )
+from app.services.coc7_occupation_service import build_coc7_occupation_skill_points_detail
 from app.services.dnd5e_character_service import (
     DND5E_RULE_SYSTEM,
     build_dnd5e_summary,
@@ -87,7 +88,7 @@ def create_character(
 ) -> CharacterRead:
     if rule_system == COC7_RULE_SYSTEM and isinstance(character_create, Coc7CharacterCreate):
         character, sheet = create_coc7_character(db, user_id, character_create)
-        return _build_character_read(character, _serialize_coc7_sheet(sheet))
+        return _build_character_read(character, _serialize_coc7_sheet(db, sheet))
 
     if rule_system == DND5E_RULE_SYSTEM and isinstance(character_create, Dnd5eCharacterCreate):
         character, sheet = create_dnd5e_character(db, user_id, character_create)
@@ -121,7 +122,7 @@ def update_character(
 
     if rule_system == COC7_RULE_SYSTEM and isinstance(character_update, Coc7CharacterUpdate):
         character, sheet = update_coc7_character(db, character, character_update)
-        return _build_character_read(character, _serialize_coc7_sheet(sheet))
+        return _build_character_read(character, _serialize_coc7_sheet(db, sheet))
 
     if rule_system == DND5E_RULE_SYSTEM and isinstance(character_update, Dnd5eCharacterUpdate):
         character, sheet = update_dnd5e_character(db, character, character_update)
@@ -172,7 +173,7 @@ def _get_serialized_sheet(db: Session, character: Character) -> dict[str, Any]:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="COC7 character sheet not found",
             )
-        return _serialize_coc7_sheet(sheet)
+        return _serialize_coc7_sheet(db, sheet)
 
     if character.rule_system == DND5E_RULE_SYSTEM:
         sheet = get_dnd5e_character(db, character.id)
@@ -189,8 +190,13 @@ def _get_serialized_sheet(db: Session, character: Character) -> dict[str, Any]:
     )
 
 
-def _serialize_coc7_sheet(sheet: Any) -> dict[str, Any]:
-    return Coc7CharacterSheetRead.model_validate(sheet).model_dump(mode="json")
+def _serialize_coc7_sheet(db: Session, sheet: Any) -> dict[str, Any]:
+    serialized = Coc7CharacterSheetRead.model_validate(sheet).model_dump(mode="json")
+    detail = build_coc7_occupation_skill_points_detail(db, sheet)
+    serialized["occupation_skill_points_detail"] = (
+        detail.model_dump(mode="json") if detail is not None else None
+    )
+    return serialized
 
 
 def _serialize_dnd5e_sheet(sheet: Any) -> dict[str, Any]:

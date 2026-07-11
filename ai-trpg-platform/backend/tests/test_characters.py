@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.db.base import Base
 from app.db.database import get_db
 from app.main import app
+from app.models.coc7_occupation import Coc7Occupation
 from app.services.coc7_skill_service import seed_coc7_skill_catalog
 
 
@@ -23,6 +24,56 @@ def client():
     Base.metadata.create_all(bind=engine)
     with testing_session_local() as db:
         seed_coc7_skill_catalog(db)
+        db.add_all(
+            [
+                Coc7Occupation(
+                    name="侦探",
+                    description="测试职业：调查案件。",
+                    skill_points_formula="教育×2＋力量或敏捷×2",
+                    skill_points_formula_json={
+                        "type": "choice",
+                        "terms": [
+                            {"attribute": "edu", "multiplier": 2},
+                            {"choose_one": ["str", "dex"], "multiplier": 2},
+                        ],
+                    },
+                    credit_min=20,
+                    credit_max=70,
+                    credit_note=None,
+                    occupation_skills_json=["侦查", "图书馆使用"],
+                ),
+                Coc7Occupation(
+                    name="教授",
+                    description="测试职业：从事学术工作。",
+                    skill_points_formula="教育×4",
+                    skill_points_formula_json={
+                        "type": "fixed",
+                        "terms": [{"attribute": "edu", "multiplier": 4}],
+                    },
+                    credit_min=20,
+                    credit_max=70,
+                    credit_note="测试备注",
+                    occupation_skills_json=["图书馆使用", "母语"],
+                ),
+                Coc7Occupation(
+                    name="记者",
+                    description="测试职业：报道新闻。",
+                    skill_points_formula="教育×2＋外貌×2",
+                    skill_points_formula_json={
+                        "type": "sum",
+                        "terms": [
+                            {"attribute": "edu", "multiplier": 2},
+                            {"attribute": "app", "multiplier": 2},
+                        ],
+                    },
+                    credit_min=10,
+                    credit_max=50,
+                    credit_note=None,
+                    occupation_skills_json=["话术", "摄影"],
+                ),
+            ]
+        )
+        db.commit()
 
     def override_get_db():
         db = testing_session_local()
@@ -61,6 +112,14 @@ def register_and_login(client: TestClient, username: str, email: str) -> str:
 
 def auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
+
+
+def occupation_id(client: TestClient, name: str) -> int:
+    response = client.get("/characters/coc7/occupations", params={"search": name})
+    assert response.status_code == 200
+    matches = [item for item in response.json() if item["name"] == name]
+    assert len(matches) == 1
+    return matches[0]["id"]
 
 
 def coc7_payload(name: str = "Dr. Armitage") -> dict:
@@ -212,6 +271,148 @@ def test_get_coc7_skill_catalog(client: TestClient):
     }
     assert science_specializations["mathematics"]["base_value"] == 10
     assert science_specializations["physics"]["base_value"] == 1
+
+
+def test_list_search_and_read_coc7_occupations(client: TestClient):
+    list_response = client.get("/characters/coc7/occupations")
+
+    assert list_response.status_code == 200
+    occupations = list_response.json()
+    assert [item["name"] for item in occupations] == sorted(
+        item["name"] for item in occupations
+    )
+    assert all("occupation_skills" in item for item in occupations)
+    assert all("occupation_skills_json" not in item for item in occupations)
+
+    search_response = client.get(
+        "/characters/coc7/occupations",
+        params={"search": "侦探"},
+    )
+    assert search_response.status_code == 200
+    assert [item["name"] for item in search_response.json()] == ["侦探"]
+
+    selected = search_response.json()[0]
+    detail_response = client.get(
+        f"/characters/coc7/occupations/{selected['id']}"
+    )
+    assert detail_response.status_code == 200
+    assert detail_response.json()["occupation_skills"] == ["侦查", "图书馆使用"]
+
+    missing_response = client.get("/characters/coc7/occupations/999999")
+    assert missing_response.status_code == 404
+    assert missing_response.json()["detail"] == "COC7 occupation not found"
+
+
+def test_linked_occupation_overrides_snapshot_and_skill_points(client: TestClient):
+    token = register_and_login(client, "alice", "alice@example.com")
+    payload = coc7_payload()
+    payload.update(
+        {
+            "occupation_id": occupation_id(client, "教授"),
+            "occupation": "untrusted name",
+            "occupation_skill_points": 9999,
+        }
+    )
+
+    response = client.post(
+        "/characters/coc7",
+        json=payload,
+        headers=auth_headers(token),
+    )
+
+    assert response.status_code == 201
+    sheet = response.json()["sheet"]
+    assert sheet["occupation_id"] == payload["occupation_id"]
+    assert sheet["occupation"] == "教授"
+    assert sheet["occupation_skill_points"] == 300
+    assert sheet["occupation_skill_points_detail"] == {
+        "formula": "教育×4",
+        "selected_attribute": None,
+        "calculation": "75×4",
+        "total": 300,
+    }
+
+
+def test_updating_occupation_and_attributes_recalculates_skill_points(client: TestClient):
+    token = register_and_login(client, "alice", "alice@example.com")
+    payload = coc7_payload()
+    payload["occupation_id"] = occupation_id(client, "教授")
+    created_response = client.post(
+        "/characters/coc7",
+        json=payload,
+        headers=auth_headers(token),
+    )
+    assert created_response.status_code == 201
+    character_id = created_response.json()["id"]
+
+    changed_occupation = client.put(
+        f"/characters/coc7/{character_id}",
+        json={
+            "occupation_id": occupation_id(client, "侦探"),
+            "occupation": "ignored snapshot",
+            "str": 80,
+            "dex": 80,
+            "occupation_skill_points": 1,
+        },
+        headers=auth_headers(token),
+    )
+    assert changed_occupation.status_code == 200
+    changed_sheet = changed_occupation.json()["sheet"]
+    assert changed_sheet["occupation"] == "侦探"
+    assert changed_sheet["occupation_skill_points"] == 310
+    assert changed_sheet["occupation_skill_points_detail"]["selected_attribute"] == "str"
+
+    changed_attribute = client.put(
+        f"/characters/coc7/{character_id}",
+        json={"dex": 90},
+        headers=auth_headers(token),
+    )
+    assert changed_attribute.status_code == 200
+    recalculated_sheet = changed_attribute.json()["sheet"]
+    assert recalculated_sheet["occupation_skill_points"] == 330
+    assert recalculated_sheet["occupation_skill_points_detail"]["selected_attribute"] == "dex"
+
+
+def test_linked_occupation_validation_and_legacy_character_compatibility(client: TestClient):
+    token = register_and_login(client, "alice", "alice@example.com")
+    invalid_payload = coc7_payload()
+    invalid_payload["occupation_id"] = 999999
+
+    invalid_response = client.post(
+        "/characters/coc7",
+        json=invalid_payload,
+        headers=auth_headers(token),
+    )
+    assert invalid_response.status_code == 404
+
+    legacy = create_coc7(client, token, name="Legacy Investigator")
+    invalid_update_response = client.put(
+        f"/characters/coc7/{legacy['id']}",
+        json={"occupation_id": 999999},
+        headers=auth_headers(token),
+    )
+    assert invalid_update_response.status_code == 404
+
+    missing_attribute_payload = coc7_payload("Missing EDU")
+    missing_attribute_payload["occupation_id"] = occupation_id(client, "教授")
+    missing_attribute_payload["edu"] = 0
+    missing_attribute_response = client.post(
+        "/characters/coc7",
+        json=missing_attribute_payload,
+        headers=auth_headers(token),
+    )
+    assert missing_attribute_response.status_code == 422
+
+    detail_response = client.get(
+        f"/characters/{legacy['id']}",
+        headers=auth_headers(token),
+    )
+    assert detail_response.status_code == 200
+    legacy_sheet = detail_response.json()["sheet"]
+    assert legacy_sheet["occupation_id"] is None
+    assert legacy_sheet["occupation"] == "Professor"
+    assert legacy_sheet["occupation_skill_points"] == 300
+    assert legacy_sheet["occupation_skill_points_detail"] is None
 
 
 def test_list_characters_returns_structured_summaries(client: TestClient):

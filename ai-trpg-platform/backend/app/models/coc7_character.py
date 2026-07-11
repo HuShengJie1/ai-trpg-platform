@@ -19,6 +19,11 @@ class Coc7CharacterSheet(Base):
         unique=True,
         index=True,
     )
+    occupation_id: Mapped[int | None] = mapped_column(
+        ForeignKey("coc7_occupations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     player_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     portrait_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     occupation: Mapped[str | None] = mapped_column(String(255), nullable=True)

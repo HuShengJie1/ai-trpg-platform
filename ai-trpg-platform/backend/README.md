@@ -75,6 +75,8 @@ Create and manage characters with a bearer token:
 
 ```text
 GET    /characters/coc7/skill-catalog
+GET    /characters/coc7/occupations
+GET    /characters/coc7/occupations/{occupation_id}
 POST   /characters/coc7
 GET    /characters/coc7/{id}/skills
 PUT    /characters/coc7/{id}/skills
@@ -86,18 +88,19 @@ PUT    /characters/dnd5e/{id}
 DELETE /characters/{id}
 ```
 
-The COC7 sheet stores rule-specific sections such as investigator identity, manually entered characteristics, HP/MP/SAN values, occupation and interest skill point totals, credit rating and assets, background entries, wounds or insanity status, weapons, equipment, and fellow investigators. COC7 skills use normalized catalog, specialization, and character-skill tables. The existing `skills_json` field remains temporarily for compatibility with older clients. Attribute generation is handled by the frontend.
+The COC7 sheet stores rule-specific sections such as investigator identity, manually entered characteristics, HP/MP/SAN values, occupation and interest skill point totals, credit rating and assets, background entries, wounds or insanity status, weapons, equipment, and fellow investigators. COC7 skills use normalized catalog, specialization, and character-skill tables. A linked `occupation_id` preserves the existing occupation-name snapshot and makes occupation skill points backend-calculated; old unlinked sheets remain compatible. The existing `skills_json` field remains temporarily for compatibility with older clients. Attribute generation is handled by the frontend.
 
 Validation flow:
 
 1. Register a user.
 2. Log in and get `access_token`.
 3. Call `GET /characters/rules`.
-4. Use `POST /characters/coc7` to create a COC7 sheet.
-5. Use `POST /characters/dnd5e` to create a DND5E sheet.
-6. Use `GET /characters` and `GET /characters/{id}` to verify list and detail responses.
-7. Use the matching rule-specific `PUT` endpoint to update a character.
-8. Use `DELETE /characters/{id}` to delete a character.
+4. Call `GET /characters/coc7/occupations` and select an occupation ID.
+5. Use `POST /characters/coc7` to create a COC7 sheet.
+6. Use `POST /characters/dnd5e` to create a DND5E sheet.
+7. Use `GET /characters` and `GET /characters/{id}` to verify list and detail responses.
+8. Use the matching rule-specific `PUT` endpoint to update a character.
+9. Use `DELETE /characters/{id}` to delete a character.
 
 Run tests:
 

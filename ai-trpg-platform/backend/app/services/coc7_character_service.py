@@ -8,11 +8,16 @@ from sqlalchemy.orm import Session
 from app.models.character import Character
 from app.models.coc7_character import Coc7CharacterSheet
 from app.schemas.coc7_character import Coc7CharacterCreate, Coc7CharacterUpdate
+from app.services.coc7_occupation_service import (
+    calculate_coc7_occupation_skill_points,
+    get_coc7_occupation,
+)
 
 
 COC7_RULE_SYSTEM = "coc7"
 COC7_ATTRIBUTE_FIELDS = ("str", "con", "siz", "dex", "app", "int", "pow", "edu", "luck")
 COC7_SHEET_FIELDS = (
+    "occupation_id",
     "player_name",
     "portrait_url",
     "occupation",
@@ -152,6 +157,13 @@ def create_coc7_character(
 ) -> tuple[Character, Coc7CharacterSheet]:
     data = character_create.model_dump()
     validate_coc7_data(data)
+    sheet_data = character_create.model_dump(exclude={"name"})
+    occupation_id = sheet_data.get("occupation_id")
+    if occupation_id is not None:
+        occupation = get_coc7_occupation(db, occupation_id)
+        calculation = calculate_coc7_occupation_skill_points(occupation, sheet_data)
+        sheet_data["occupation"] = occupation.name
+        sheet_data["occupation_skill_points"] = calculation.total
 
     character = Character(
         user_id=user_id,
@@ -162,8 +174,10 @@ def create_coc7_character(
 
     try:
         db.flush()
-        sheet_data = _to_model_sheet_data(character_create.model_dump(exclude={"name"}))
-        sheet = Coc7CharacterSheet(character_id=character.id, **sheet_data)
+        sheet = Coc7CharacterSheet(
+            character_id=character.id,
+            **_to_model_sheet_data(sheet_data),
+        )
         db.add(sheet)
         db.commit()
     except IntegrityError:
@@ -210,6 +224,12 @@ def update_coc7_character(
                 detail=f"COC7 field '{field}' cannot be null",
             )
         setattr(sheet, COC7_MODEL_FIELD_MAP.get(field, field), updates[field])
+
+    if sheet.occupation_id is not None:
+        occupation = get_coc7_occupation(db, sheet.occupation_id)
+        calculation = calculate_coc7_occupation_skill_points(occupation, sheet)
+        sheet.occupation = occupation.name
+        sheet.occupation_skill_points = calculation.total
 
     try:
         db.commit()

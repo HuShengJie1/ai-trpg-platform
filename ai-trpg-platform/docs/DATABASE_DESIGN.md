@@ -34,6 +34,7 @@
 | --- | --- | --- |
 | id | COC7 角色卡 ID | 主键 |
 | character_id | 公共角色 ID | 外键到 `characters.id`，唯一 |
+| occupation_id | 关联职业 ID | 可为空，外键到 `coc7_occupations.id`，删除职业时设为 `NULL` |
 | player_name | 玩家名 | 可为空 |
 | portrait_url | 肖像地址 | 可为空 |
 | occupation | 职业 | 可为空 |
@@ -43,7 +44,7 @@
 | residence | 居住地 | 可为空 |
 | birthplace | 出生地 | 可为空 |
 | background | 背景摘要 | 可为空，不存放版权规则书文本 |
-| occupation_skill_points | 本职技能点 | 用户手动填写或前端计算后保存 |
+| occupation_skill_points | 本职技能点 | 关联职业时由后端根据职业公式和当前属性强制计算 |
 | personal_interest_points | 个人兴趣技能点 | 用户手动填写或前端计算后保存 |
 | credit_rating | 信用评级 | 基础校验范围为 0 到 100 |
 | str/con/siz/dex/app/int/pow/edu/luck | COC7 属性 | 基础校验范围为 0 到 100 |
@@ -75,7 +76,7 @@
 | created_at | 创建时间 | 记录创建时间 |
 | updated_at | 更新时间 | 记录更新时间 |
 
-COC7 第一版后端只保存用户填写的数据，不实现投骰、属性生成、衍生值自动计算或规则文本复刻。字段结构参考创建调查员流程和调查员人物卡常见分区。
+COC7 第一版后端不实现投骰、属性生成、衍生值自动计算或规则文本复刻。职业技能点是例外：当 `occupation_id` 不为空时，后端根据职业公式强制计算并保存；无职业关联的旧角色仍保留原有手动点数。
 
 ## 2.2. coc7_skill_definitions
 
@@ -181,6 +182,16 @@ COC7 调查员职业目录。MVP 使用单表保存职业展示信息、结构�
 | updated_at | 更新时间 | 记录更新时间 |
 
 职业数据通过本地 JSON 导入服务写入，不在迁移文件中嵌入职业介绍等可能受版权保护的内容。当前版本不将本职技能字符串强制关联到技能目录；后续需要自动校验任选技能时，再增加规范化关系表。
+
+`coc7_character_sheets.occupation_id` 是可空外键并带索引。`occupation` 文本字段继续保存职业名称快照，兼容迁移前角色和职业名称后续变更。关联职业的技能点公式支持：
+
+```text
+fixed: 单一属性乘固定倍率
+sum: 多个属性项相加
+choice: 候选属性取当前最大值，同值时取公式中最先出现的属性
+```
+
+公式引用的属性必须已有正数值；缺失或为零时拒绝创建或更新，避免无意保存为零点。每次修改关联职业或角色属性时都会重新计算 `occupation_skill_points`。
 
 ## 3. dice_roll
 

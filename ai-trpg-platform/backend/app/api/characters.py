@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_user
@@ -6,6 +6,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.schemas.character import CharacterListItem, CharacterRead, SupportedRuleRead
 from app.schemas.coc7_character import Coc7CharacterCreate, Coc7CharacterUpdate
+from app.schemas.coc7_occupation import Coc7OccupationRead
 from app.schemas.coc7_skill import (
     Coc7CharacterSkillRead,
     Coc7CharacterSkillsUpdate,
@@ -21,6 +22,10 @@ from app.services.character_service import (
     update_character,
 )
 from app.services.coc7_character_service import COC7_RULE_SYSTEM
+from app.services.coc7_occupation_service import (
+    get_coc7_occupation,
+    list_coc7_occupations,
+)
 from app.services.coc7_skill_service import (
     list_coc7_character_skills,
     list_coc7_skill_catalog,
@@ -39,6 +44,22 @@ def read_supported_rules() -> list[SupportedRuleRead]:
 @router.get("/coc7/skill-catalog", response_model=list[Coc7SkillDefinitionRead])
 def read_coc7_skill_catalog(db: Session = Depends(get_db)) -> list[Coc7SkillDefinitionRead]:
     return list_coc7_skill_catalog(db)
+
+
+@router.get("/coc7/occupations", response_model=list[Coc7OccupationRead])
+def read_coc7_occupations(
+    search: str | None = Query(default=None, max_length=255),
+    db: Session = Depends(get_db),
+) -> list[Coc7OccupationRead]:
+    return list_coc7_occupations(db, search)
+
+
+@router.get("/coc7/occupations/{occupation_id}", response_model=Coc7OccupationRead)
+def read_coc7_occupation(
+    occupation_id: int,
+    db: Session = Depends(get_db),
+) -> Coc7OccupationRead:
+    return get_coc7_occupation(db, occupation_id)
 
 
 @router.post(

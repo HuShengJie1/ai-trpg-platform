@@ -3,11 +3,14 @@ from typing import Any, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.coc7_occupation import Coc7OccupationSkillPointsDetail
+
 IntegerValue: TypeAlias = int
 StringValue: TypeAlias = str
 
 
 class Coc7CharacterBase(BaseModel):
+    occupation_id: IntegerValue | None = Field(default=None, ge=1)
     player_name: StringValue | None = Field(default=None, max_length=255)
     portrait_url: StringValue | None = Field(default=None, max_length=512)
     occupation: StringValue | None = Field(default=None, max_length=255)
@@ -75,6 +78,7 @@ class Coc7CharacterCreate(Coc7CharacterBase):
 
 class Coc7CharacterUpdate(BaseModel):
     name: StringValue | None = Field(default=None, min_length=1, max_length=255)
+    occupation_id: IntegerValue | None = Field(default=None, ge=1)
     player_name: StringValue | None = Field(default=None, max_length=255)
     portrait_url: StringValue | None = Field(default=None, max_length=512)
     occupation: StringValue | None = Field(default=None, max_length=255)
@@ -141,6 +145,7 @@ class Coc7CharacterSheetRead(Coc7CharacterBase):
     int: IntegerValue = Field(validation_alias="int_score", ge=0, le=100)
     id: IntegerValue
     character_id: IntegerValue
+    occupation_skill_points_detail: Coc7OccupationSkillPointsDetail | None = None
     created_at: datetime
     updated_at: datetime
 

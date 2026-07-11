@@ -75,6 +75,8 @@ Response matches the register user response. Missing or invalid tokens return `4
 | --- | --- | --- |
 | GET | `/characters/rules` | 获取支持的角色规则系统 |
 | GET | `/characters/coc7/skill-catalog` | 获取 COC7 标准技能和专攻目录 |
+| GET | `/characters/coc7/occupations` | 获取 COC7 职业列表，可按名称搜索 |
+| GET | `/characters/coc7/occupations/{occupation_id}` | 获取 COC7 职业详情 |
 | POST | `/characters/coc7` | 创建当前登录用户的 COC7 角色卡 |
 | GET | `/characters/coc7/{id}/skills` | 获取当前用户的 COC7 角色技能 |
 | PUT | `/characters/coc7/{id}/skills` | 批量替换当前用户的 COC7 角色技能 |
@@ -85,7 +87,7 @@ Response matches the register user response. Missing or invalid tokens return `4
 | PUT | `/characters/dnd5e/{id}` | 更新当前登录用户的 DND5E 角色卡 |
 | DELETE | `/characters/{id}` | 删除角色 |
 
-All character write, list, detail, update, and delete endpoints except `/characters/rules` and `/characters/coc7/skill-catalog` require:
+All character write, list, detail, update, and delete endpoints except `/characters/rules`, `/characters/coc7/skill-catalog`, and the COC7 occupation catalog endpoints require:
 
 ```text
 Authorization: Bearer <access_token>
@@ -139,6 +141,42 @@ Returns the normalized COC7 skill catalog. Fixed skills expose `base_value`; att
 ]
 ```
 
+### GET `/characters/coc7/occupations`
+
+Returns all COC7 occupations ordered by name. The optional `search` query parameter performs a partial name match, for example:
+
+```text
+GET /characters/coc7/occupations?search=侦探
+```
+
+Each list item uses the same response shape as the detail endpoint:
+
+```json
+{
+  "id": 5,
+  "name": "侦探",
+  "description": "short occupation description",
+  "skill_points_formula": "教育×2＋力量或敏捷×2",
+  "skill_points_formula_json": {
+    "type": "choice",
+    "terms": [
+      {"attribute": "edu", "multiplier": 2},
+      {"choose_one": ["str", "dex"], "multiplier": 2}
+    ]
+  },
+  "credit_min": 20,
+  "credit_max": 70,
+  "credit_note": null,
+  "occupation_skills": ["侦查", "图书馆使用"],
+  "created_at": "2026-07-11T00:00:00Z",
+  "updated_at": "2026-07-11T00:00:00Z"
+}
+```
+
+### GET `/characters/coc7/occupations/{occupation_id}`
+
+Returns one occupation using the shape above. A missing occupation returns `404` with `COC7 occupation not found`.
+
 ### POST `/characters/coc7`
 
 Creates one row in `characters` and one row in `coc7_character_sheets`.
@@ -149,8 +187,7 @@ Request includes the public `name` plus COC7-specific fields:
 {
   "name": "Dr. Armitage",
   "player_name": "Alice",
-  "occupation": "Professor",
-  "occupation_skill_points": 300,
+  "occupation_id": 5,
   "personal_interest_points": 160,
   "credit_rating": 40,
   "str": 50,
@@ -187,6 +224,26 @@ Request includes the public `name` plus COC7-specific fields:
 ```
 
 COC7 attributes, luck, and credit rating are validated from 0 to 100. `max_san` is validated from 0 to 99. The backend stores user-filled values and does not roll dice or automatically generate attributes.
+
+When `occupation_id` is present, the backend verifies that the occupation exists, copies its current name into the legacy `occupation` snapshot field, and calculates `occupation_skill_points` from the linked occupation formula and current attributes. Any client-provided occupation name or occupation skill-point total is overwritten for linked characters. Formula attributes must be positive; otherwise creation or update returns `422`.
+
+The COC7 sheet response includes the relation and a reproducible calculation detail:
+
+```json
+{
+  "occupation_id": 5,
+  "occupation": "侦探",
+  "occupation_skill_points": 260,
+  "occupation_skill_points_detail": {
+    "formula": "教育×2＋力量或敏捷×2",
+    "selected_attribute": "dex",
+    "calculation": "60×2＋70×2",
+    "total": 260
+  }
+}
+```
+
+Supported formula types are `fixed`, `sum`, and `choice`. A choice selects the highest current attribute value; ties select the first attribute listed in `choose_one`. Updating a linked occupation or any referenced attribute recalculates the stored total. Existing character sheets with `occupation_id = null` remain readable and continue using their saved text snapshot and point total.
 
 ### PUT `/characters/coc7/{id}/skills`
 
