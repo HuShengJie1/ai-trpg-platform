@@ -13,15 +13,32 @@ type PageStatus = "loading" | "missing-token" | "ready" | "invalid-token";
 const fallbackRules: SupportedRule[] = [
   {
     id: "coc7",
-    name: "COC7",
-    description: "克苏鲁的呼唤第七版角色卡。",
+    name: "克苏鲁的呼唤第七版",
+    description: "创建克苏鲁的呼唤第七版调查员角色卡。",
   },
   {
     id: "dnd5e",
-    name: "DND5E",
-    description: "龙与地下城第五版角色卡。",
+    name: "龙与地下城第五版",
+    description: "创建龙与地下城第五版冒险者角色卡。",
   },
 ];
+
+const localizedRules: Record<string, Pick<SupportedRule, "name" | "description">> = {
+  coc7: {
+    name: "克苏鲁的呼唤第七版",
+    description: "创建克苏鲁的呼唤第七版调查员角色卡。",
+  },
+  dnd5e: {
+    name: "龙与地下城第五版",
+    description: "创建龙与地下城第五版冒险者角色卡。",
+  },
+};
+
+function localizeRule(rule: SupportedRule): SupportedRule {
+  const localized = localizedRules[rule.id.trim().toLowerCase()];
+
+  return localized ? { ...rule, ...localized } : rule;
+}
 
 function getRuleCreatePath(ruleId: string): string | null {
   const normalized = ruleId.trim().toLowerCase();
@@ -52,7 +69,7 @@ export default function NewCharacterPage() {
 
     getCharacterRules()
       .then((nextRules) => {
-        setRules(nextRules.length > 0 ? nextRules : fallbackRules);
+        setRules((nextRules.length > 0 ? nextRules : fallbackRules).map(localizeRule));
         if (nextRules.length === 0) {
           setWarning("后端没有返回规则列表，已显示默认规则入口。");
         }
@@ -65,7 +82,7 @@ export default function NewCharacterPage() {
           return;
         }
 
-        setRules(fallbackRules);
+        setRules(fallbackRules.map(localizeRule));
         setWarning(
           `${getErrorMessage(caughtError, "无法读取规则列表。")} 已显示默认规则入口。`,
         );
@@ -94,7 +111,7 @@ export default function NewCharacterPage() {
 
         {status === "missing-token" ? (
           <div className="mt-8 rounded-md bg-amber-50 p-4 text-sm text-amber-800">
-            <p>当前没有登录 token，请先登录。</p>
+            <p>当前没有登录凭证，请先登录。</p>
             <Link
               className="mt-3 inline-flex rounded-md bg-gray-950 px-4 py-2 font-medium text-white hover:bg-gray-800"
               href="/login"
@@ -134,7 +151,7 @@ export default function NewCharacterPage() {
                     className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
                   >
                     <p className="text-xs font-medium uppercase text-indigo-600">
-                      {rule.id}
+                      可用规则
                     </p>
                     <h2 className="mt-2 text-xl font-semibold text-gray-950">
                       {rule.name}

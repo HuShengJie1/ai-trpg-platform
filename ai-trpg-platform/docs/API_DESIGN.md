@@ -74,7 +74,10 @@ Response matches the register user response. Missing or invalid tokens return `4
 | Method | Path | 说明 |
 | --- | --- | --- |
 | GET | `/characters/rules` | 获取支持的角色规则系统 |
+| GET | `/characters/coc7/skill-catalog` | 获取 COC7 标准技能和专攻目录 |
 | POST | `/characters/coc7` | 创建当前登录用户的 COC7 角色卡 |
+| GET | `/characters/coc7/{id}/skills` | 获取当前用户的 COC7 角色技能 |
+| PUT | `/characters/coc7/{id}/skills` | 批量替换当前用户的 COC7 角色技能 |
 | POST | `/characters/dnd5e` | 创建当前登录用户的 DND5E 角色卡 |
 | GET | `/characters` | 获取当前用户角色列表 |
 | GET | `/characters/{id}` | 获取角色详情 |
@@ -82,7 +85,7 @@ Response matches the register user response. Missing or invalid tokens return `4
 | PUT | `/characters/dnd5e/{id}` | 更新当前登录用户的 DND5E 角色卡 |
 | DELETE | `/characters/{id}` | 删除角色 |
 
-All character write, list, detail, update, and delete endpoints except `/characters/rules` require:
+All character write, list, detail, update, and delete endpoints except `/characters/rules` and `/characters/coc7/skill-catalog` require:
 
 ```text
 Authorization: Bearer <access_token>
@@ -107,6 +110,35 @@ Response:
 ]
 ```
 
+### GET `/characters/coc7/skill-catalog`
+
+Returns the normalized COC7 skill catalog. Fixed skills expose `base_value`; attribute-based skills expose `base_formula`; specialized skills include selectable `specializations`.
+
+```json
+[
+  {
+    "key": "fighting",
+    "name": "格斗",
+    "category": "combat",
+    "base_value": null,
+    "base_formula": "specialization",
+    "allows_specialization": true,
+    "allows_custom_specialization": true,
+    "is_custom": false,
+    "sort_order": 18,
+    "note": null,
+    "specializations": [
+      {
+        "key": "brawl",
+        "name": "斗殴",
+        "base_value": 25,
+        "sort_order": 1
+      }
+    ]
+  }
+]
+```
+
 ### POST `/characters/coc7`
 
 Creates one row in `characters` and one row in `coc7_character_sheets`.
@@ -116,7 +148,11 @@ Request includes the public `name` plus COC7-specific fields:
 ```json
 {
   "name": "Dr. Armitage",
+  "player_name": "Alice",
   "occupation": "Professor",
+  "occupation_skill_points": 300,
+  "personal_interest_points": 160,
+  "credit_rating": 40,
   "str": 50,
   "con": 55,
   "siz": 60,
@@ -126,11 +162,68 @@ Request includes the public `name` plus COC7-specific fields:
   "pow": 65,
   "edu": 75,
   "luck": 70,
-  "skills_json": {}
+  "hp": 11,
+  "max_hp": 11,
+  "mp": 13,
+  "max_mp": 13,
+  "san": 65,
+  "starting_san": 65,
+  "max_san": 99,
+  "spending_level": "standard",
+  "cash": "cash note",
+  "assets": "asset note",
+  "personal_description": "short original description",
+  "ideology_beliefs": "short original belief",
+  "significant_people": "short original person note",
+  "meaningful_locations": "short original place note",
+  "treasured_possessions": "short original possession note",
+  "traits": "short original trait",
+  "key_connection": "short original key connection",
+  "skills_json": {},
+  "occupation_skills_json": {},
+  "equipment_json": {},
+  "weapons_json": {}
 }
 ```
 
-COC7 attributes are validated from 0 to 100.
+COC7 attributes, luck, and credit rating are validated from 0 to 100. `max_san` is validated from 0 to 99. The backend stores user-filled values and does not roll dice or automatically generate attributes.
+
+### PUT `/characters/coc7/{id}/skills`
+
+Replaces the complete normalized skill list for one owned COC7 character. Fixed and formula-based base values are resolved by the backend. For example, `own_language` uses the character's EDU and `dodge` uses half DEX rounded down.
+
+```json
+{
+  "skills": [
+    {
+      "skill_key": "spot_hidden",
+      "occupation_points": 20,
+      "interest_points": 5,
+      "growth_points": 0,
+      "is_occupation": true,
+      "improvement_checked": false,
+      "sort_order": 1
+    },
+    {
+      "skill_key": "fighting",
+      "specialization_key": "brawl",
+      "growth_points": 5
+    },
+    {
+      "skill_key": "custom",
+      "custom_name": "地方传说",
+      "base_value": 5,
+      "interest_points": 25
+    }
+  ]
+}
+```
+
+Each response item includes the resolved `base_value` and computed `value`.
+
+### GET `/characters/coc7/{id}/skills`
+
+Returns the same normalized role skill list without modifying it. Cross-user access returns `404`.
 
 ### POST `/characters/dnd5e`
 
@@ -157,7 +250,7 @@ DND5E `level` is validated from 1 to 20. Ability scores are validated from 1 to 
 
 ### Character Responses
 
-List items include `id`, `user_id`, `rule_system`, `name`, `summary`, `created_at`, and `updated_at`.
+List items include `id`, `user_id`, `rule_system`, `name`, `summary`, `created_at`, and `updated_at`. `summary` is a lightweight object for list cards. COC7 summaries include `occupation`, `age`, `hp`, `mp`, and `san`; DND5E summaries include `race`, `class_name`, `level`, `current_hp`, and `armor_class`.
 
 Detail responses include the same public character fields plus `sheet`, which contains the matching rule-specific sheet. Users can only access their own characters. Missing or cross-user characters return `404`. Updating through the wrong rule-specific endpoint returns `400`.
 

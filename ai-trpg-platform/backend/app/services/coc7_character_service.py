@@ -13,12 +13,18 @@ from app.schemas.coc7_character import Coc7CharacterCreate, Coc7CharacterUpdate
 COC7_RULE_SYSTEM = "coc7"
 COC7_ATTRIBUTE_FIELDS = ("str", "con", "siz", "dex", "app", "int", "pow", "edu", "luck")
 COC7_SHEET_FIELDS = (
+    "player_name",
+    "portrait_url",
     "occupation",
+    "occupation_details",
     "age",
     "gender",
     "residence",
     "birthplace",
     "background",
+    "occupation_skill_points",
+    "personal_interest_points",
+    "credit_rating",
     "str",
     "con",
     "siz",
@@ -29,17 +35,48 @@ COC7_SHEET_FIELDS = (
     "edu",
     "luck",
     "hp",
+    "max_hp",
     "mp",
+    "max_mp",
     "san",
+    "starting_san",
+    "max_san",
     "build",
     "damage_bonus",
     "move",
+    "spending_level",
+    "cash",
+    "assets",
+    "personal_description",
+    "ideology_beliefs",
+    "significant_people",
+    "meaningful_locations",
+    "treasured_possessions",
+    "traits",
+    "key_connection",
+    "injuries_scars",
+    "phobias_manias",
+    "arcane_tomes_spells_artifacts",
+    "encounters_with_strange_entities",
+    "notes",
+    "major_wound",
+    "unconscious",
+    "dying",
+    "temporary_insanity",
+    "indefinite_insanity",
     "skills_json",
+    "occupation_skills_json",
     "equipment_json",
+    "weapons_json",
     "backstory_json",
     "status_json",
+    "fellow_investigators_json",
+    "development_json",
 )
 COC7_REQUIRED_SHEET_FIELDS = {
+    "occupation_skill_points",
+    "personal_interest_points",
+    "credit_rating",
     "str",
     "con",
     "siz",
@@ -50,14 +87,27 @@ COC7_REQUIRED_SHEET_FIELDS = {
     "edu",
     "luck",
     "hp",
+    "max_hp",
     "mp",
+    "max_mp",
     "san",
+    "starting_san",
+    "max_san",
     "build",
     "move",
+    "major_wound",
+    "unconscious",
+    "dying",
+    "temporary_insanity",
+    "indefinite_insanity",
     "skills_json",
+    "occupation_skills_json",
     "equipment_json",
+    "weapons_json",
     "backstory_json",
     "status_json",
+    "fellow_investigators_json",
+    "development_json",
 }
 COC7_MODEL_FIELD_MAP = {
     "str": "str_score",
@@ -79,6 +129,20 @@ def validate_coc7_data(data: dict[str, Any]) -> None:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"COC7 attribute '{field}' must be between 0 and 100",
             )
+
+    credit_rating = data.get("credit_rating")
+    if credit_rating is not None and not 0 <= credit_rating <= 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="COC7 credit_rating must be between 0 and 100",
+        )
+
+    max_san = data.get("max_san")
+    if max_san is not None and not 0 <= max_san <= 99:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="COC7 max_san must be between 0 and 99",
+        )
 
 
 def create_coc7_character(
@@ -161,12 +225,17 @@ def update_coc7_character(
     return character, sheet
 
 
-def build_coc7_summary(sheet: Coc7CharacterSheet | None) -> str:
+def build_coc7_summary(sheet: Coc7CharacterSheet | None) -> dict[str, Any]:
     if sheet is None:
-        return "COC7 sheet missing"
+        return {}
 
-    occupation = sheet.occupation or "unknown occupation"
-    return f"COC7 | {occupation} | HP {sheet.hp} | SAN {sheet.san}"
+    return {
+        "occupation": sheet.occupation,
+        "age": sheet.age,
+        "hp": sheet.hp,
+        "mp": sheet.mp,
+        "san": sheet.san,
+    }
 
 
 def _to_model_sheet_data(data: dict[str, Any]) -> dict[str, Any]:

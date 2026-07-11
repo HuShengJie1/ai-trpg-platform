@@ -175,10 +175,14 @@ def update_dnd5e_character(
     return character, sheet
 
 
-def build_dnd5e_summary(sheet: Dnd5eCharacterSheet | None) -> str:
+def build_dnd5e_summary(sheet: Dnd5eCharacterSheet | None) -> dict[str, Any]:
     if sheet is None:
-        return "DND5E sheet missing"
+        return {}
 
-    race = sheet.race or "unknown race"
-    class_name = sheet.class_name or "unknown class"
-    return f"DND5E | Level {sheet.level} {race} {class_name} | HP {sheet.current_hp}/{sheet.max_hp}"
+    return {
+        "race": sheet.race,
+        "class_name": sheet.class_name,
+        "level": sheet.level,
+        "current_hp": sheet.current_hp,
+        "armor_class": sheet.armor_class,
+    }

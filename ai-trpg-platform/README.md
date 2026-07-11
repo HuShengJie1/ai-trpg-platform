@@ -106,7 +106,10 @@ Character endpoints:
 
 ```text
 GET    http://127.0.0.1:8000/characters/rules
+GET    http://127.0.0.1:8000/characters/coc7/skill-catalog
 POST   http://127.0.0.1:8000/characters/coc7
+GET    http://127.0.0.1:8000/characters/coc7/{id}/skills
+PUT    http://127.0.0.1:8000/characters/coc7/{id}/skills
 POST   http://127.0.0.1:8000/characters/dnd5e
 GET    http://127.0.0.1:8000/characters
 GET    http://127.0.0.1:8000/characters/{id}

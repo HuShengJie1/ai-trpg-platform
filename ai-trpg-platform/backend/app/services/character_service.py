@@ -154,14 +154,14 @@ def delete_character(db: Session, user_id: int, character_id: int) -> None:
     db.commit()
 
 
-def _build_summary(db: Session, character: Character) -> str:
+def _build_summary(db: Session, character: Character) -> dict[str, Any]:
     if character.rule_system == COC7_RULE_SYSTEM:
         return build_coc7_summary(get_coc7_character(db, character.id))
 
     if character.rule_system == DND5E_RULE_SYSTEM:
         return build_dnd5e_summary(get_dnd5e_character(db, character.id))
 
-    return "Unsupported character rule system"
+    return {"status": "Unsupported character rule system"}
 
 
 def _get_serialized_sheet(db: Session, character: Character) -> dict[str, Any]:

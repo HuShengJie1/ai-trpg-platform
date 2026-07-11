@@ -74,7 +74,10 @@ curl http://127.0.0.1:8000/characters/rules
 Create and manage characters with a bearer token:
 
 ```text
+GET    /characters/coc7/skill-catalog
 POST   /characters/coc7
+GET    /characters/coc7/{id}/skills
+PUT    /characters/coc7/{id}/skills
 POST   /characters/dnd5e
 GET    /characters
 GET    /characters/{id}
@@ -82,6 +85,8 @@ PUT    /characters/coc7/{id}
 PUT    /characters/dnd5e/{id}
 DELETE /characters/{id}
 ```
+
+The COC7 sheet stores rule-specific sections such as investigator identity, manually entered characteristics, HP/MP/SAN values, occupation and interest skill point totals, credit rating and assets, background entries, wounds or insanity status, weapons, equipment, and fellow investigators. COC7 skills use normalized catalog, specialization, and character-skill tables. The existing `skills_json` field remains temporarily for compatibility with older clients. Attribute generation is handled by the frontend.
 
 Validation flow:
 
@@ -99,3 +104,13 @@ Run tests:
 ```bash
 uv run pytest
 ```
+
+## Import COC7 Occupations
+
+After applying migrations, import a local occupation JSON file with:
+
+```bash
+uv run python -m app.services.coc7_occupation_service /path/to/调查员职业设置.json
+```
+
+The importer validates and structures skill-point formulas and credit ranges, then creates or updates occupations by their unique name. It does not delete occupations that are absent from the source file. Keep source material outside the repository unless it is safe and authorized to redistribute.

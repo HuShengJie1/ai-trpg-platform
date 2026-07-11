@@ -44,6 +44,7 @@ export type Coc7CharacterCreate = {
   edu: number;
   luck: number;
   hp: number;
+  max_hp: number;
   mp: number;
   san: number;
   build: number;

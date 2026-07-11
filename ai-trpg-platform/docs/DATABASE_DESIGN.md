@@ -1,6 +1,6 @@
 # Database Design / 数据库设计
 
-本文件描述数据库表设计。当前已实现 `users` 表，以及多规则角色卡相关的 `characters`、`coc7_character_sheets`、`dnd5e_character_sheets` 表。
+本文件描述数据库表设计。当前已实现用户、多规则角色卡、COC7 技能目录和 COC7 职业目录相关表。
 
 ## 1. users
 
@@ -34,22 +34,110 @@
 | --- | --- | --- |
 | id | COC7 角色卡 ID | 主键 |
 | character_id | 公共角色 ID | 外键到 `characters.id`，唯一 |
+| player_name | 玩家名 | 可为空 |
+| portrait_url | 肖像地址 | 可为空 |
 | occupation | 职业 | 可为空 |
+| occupation_details | 职业补充说明 | 可为空 |
 | age | 年龄 | 可为空 |
 | gender | 性别 | 可为空 |
 | residence | 居住地 | 可为空 |
 | birthplace | 出生地 | 可为空 |
 | background | 背景摘要 | 可为空，不存放版权规则书文本 |
+| occupation_skill_points | 本职技能点 | 用户手动填写或前端计算后保存 |
+| personal_interest_points | 个人兴趣技能点 | 用户手动填写或前端计算后保存 |
+| credit_rating | 信用评级 | 基础校验范围为 0 到 100 |
 | str/con/siz/dex/app/int/pow/edu/luck | COC7 属性 | 基础校验范围为 0 到 100 |
-| hp/mp/san/build/damage_bonus/move | 衍生属性 | 当前只做存储，不自动计算 |
-| skills_json | 技能数据 | JSON |
+| hp/max_hp/mp/max_mp/san/starting_san/max_san | HP、MP、SAN | 前端按 `(CON + SIZ) / 10` 向下取整计算 `max_hp`，按 `INT / 5` 向下取整计算 `mp`，并令 `san` 等于 `POW` |
+| build/damage_bonus/move | 体格、伤害加值、移动力 | 前端按 `STR + SIZ` 对照表计算体格与伤害加值，并根据 `STR/DEX/SIZ` 与年龄计算移动力 |
+| spending_level/cash/assets | 消费水平、现金、资产 | 根据角色信用评级相关信息手动填写 |
+| personal_description | 形象描述 | 可为空 |
+| ideology_beliefs | 思想和信念 | 可为空 |
+| significant_people | 重要之人 | 可为空 |
+| meaningful_locations | 意义非凡之地 | 可为空 |
+| treasured_possessions | 宝贵之物 | 可为空 |
+| traits | 特质 | 可为空 |
+| key_connection | 关键背景连接 | 可为空 |
+| injuries_scars | 伤口和伤疤 | 可为空 |
+| phobias_manias | 恐惧症和躁狂症 | 可为空 |
+| arcane_tomes_spells_artifacts | 神秘典籍、法术和物件 | 可为空 |
+| encounters_with_strange_entities | 神话或怪异遭遇记录 | 可为空 |
+| notes | 备注 | 可为空 |
+| major_wound/unconscious/dying | 伤势状态 | 布尔值 |
+| temporary_insanity/indefinite_insanity | 疯狂状态 | 布尔值 |
+| skills_json | 旧版技能数据 | JSON 兼容字段；新技能数据使用规范化技能表 |
+| occupation_skills_json | 本职技能标记或分配数据 | JSON |
 | equipment_json | 装备数据 | JSON |
+| weapons_json | 武器数据 | JSON |
 | backstory_json | 背景故事数据 | JSON |
 | status_json | 状态数据 | JSON |
+| fellow_investigators_json | 同行调查员记录 | JSON |
+| development_json | 成长、技能勾选等扩展记录 | JSON |
 | created_at | 创建时间 | 记录创建时间 |
 | updated_at | 更新时间 | 记录更新时间 |
 
-## 2.2. dnd5e_character_sheets
+COC7 第一版后端只保存用户填写的数据，不实现投骰、属性生成、衍生值自动计算或规则文本复刻。字段结构参考创建调查员流程和调查员人物卡常见分区。
+
+## 2.2. coc7_skill_definitions
+
+COC7 标准技能目录。每个技能只定义一次，角色卡不再重复保存技能名称、分类和固定基础值。
+
+| 字段名 | 字段含义 | 简单说明 |
+| --- | --- | --- |
+| id | 技能定义 ID | 主键 |
+| key | 稳定技能标识 | 唯一，例如 `spot_hidden` |
+| name | 中文技能名 | 例如侦查 |
+| category | 技能分类 | investigation、combat、knowledge 等 |
+| base_value | 固定基础值 | 属性公式或专攻技能可为空 |
+| base_formula | 基础值公式类型 | `edu`、`dex_half` 或 `specialization` |
+| allows_specialization | 是否允许专攻 | 外语、格斗、射击、科学等 |
+| allows_custom_specialization | 是否允许自定义专攻 | 布尔值 |
+| is_custom | 是否为自定义技能入口 | 布尔值 |
+| sort_order | 显示顺序 | 按技能表顺序 |
+| note | 简短实现备注 | 可为空 |
+| created_at/updated_at | 时间字段 | 记录维护时间 |
+
+## 2.3. coc7_skill_specializations
+
+COC7 技能专攻目录，例如格斗（斗殴）、射击（手枪）、科学（数学）。
+
+| 字段名 | 字段含义 | 简单说明 |
+| --- | --- | --- |
+| id | 专攻 ID | 主键 |
+| skill_definition_id | 所属技能 | 外键到 `coc7_skill_definitions.id` |
+| key | 稳定专攻标识 | 技能内唯一 |
+| name | 中文专攻名 | 展示名称 |
+| base_value | 专攻基础值 | 范围 0 到 100 |
+| sort_order | 显示顺序 | 按技能表顺序 |
+| created_at | 创建时间 | 记录写入时间 |
+
+## 2.4. coc7_character_skills
+
+角色实际拥有的技能值。通过点数分项计算当前技能值：
+
+```text
+value = base_value + occupation_points + interest_points + growth_points
+```
+
+| 字段名 | 字段含义 | 简单说明 |
+| --- | --- | --- |
+| id | 角色技能 ID | 主键 |
+| character_sheet_id | COC7 角色卡 | 外键到 `coc7_character_sheets.id`，级联删除 |
+| skill_definition_id | 标准技能 | 外键到技能目录 |
+| skill_specialization_id | 标准专攻 | 可为空 |
+| custom_name | 自定义技能名 | 自定义技能时使用 |
+| custom_specialization | 自定义专攻名 | 自定义专攻时使用 |
+| base_value | 创建时确定的基础值 | 固定值、属性公式值或专攻值 |
+| occupation_points | 本职技能投入点 | 非负整数 |
+| interest_points | 兴趣技能投入点 | 非负整数 |
+| growth_points | 成长增加点 | 非负整数 |
+| is_occupation | 是否为本职技能 | 布尔值 |
+| improvement_checked | 是否勾选成长 | 布尔值 |
+| sort_order | 角色卡显示顺序 | 非负整数 |
+| created_at/updated_at | 时间字段 | 记录维护时间 |
+
+技能目录由 `Coc7人物技能表.xlsx` 去重整理。表格中的重复格斗、射击、科学、生存、技艺等行被建模为同一技能的多个可选专攻，而不是重复技能定义。
+
+## 2.5. dnd5e_character_sheets
 
 | 字段名 | 字段含义 | 简单说明 |
 | --- | --- | --- |
@@ -73,6 +161,26 @@
 | status_json | 状态数据 | JSON |
 | created_at | 创建时间 | 记录创建时间 |
 | updated_at | 更新时间 | 记录更新时间 |
+
+## 2.6. coc7_occupations
+
+COC7 调查员职业目录。MVP 使用单表保存职业展示信息、结构化信用范围、技能点公式和本职技能原文列表。
+
+| 字段名 | 字段含义 | 简单说明 |
+| --- | --- | --- |
+| id | 职业 ID | 主键 |
+| name | 职业名称 | 唯一，例如会计师 |
+| description | 职业介绍 | 职业说明文本 |
+| skill_points_formula | 技能点公式原文 | 例如 `教育×4` |
+| skill_points_formula_json | 结构化技能点公式 | JSON，用于后端自动计算 |
+| credit_min | 最低信用评级 | 0 到 99 |
+| credit_max | 最高信用评级 | 0 到 99，且不小于最低值 |
+| credit_note | 信用范围备注 | 原始范围后的补充说明，可为空 |
+| occupation_skills_json | 本职技能 | JSON 字符串数组，保留固定、任选和组合规则原文 |
+| created_at | 创建时间 | 记录创建时间 |
+| updated_at | 更新时间 | 记录更新时间 |
+
+职业数据通过本地 JSON 导入服务写入，不在迁移文件中嵌入职业介绍等可能受版权保护的内容。当前版本不将本职技能字符串强制关联到技能目录；后续需要自动校验任选技能时，再增加规范化关系表。
 
 ## 3. dice_roll
 

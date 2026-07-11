@@ -54,7 +54,7 @@ export default function EditCoc7CharacterPage({
 
   useEffect(() => {
     if (!Number.isInteger(characterId) || characterId <= 0) {
-      setError("角色 ID 不正确。");
+      setError("角色编号不正确。");
       setStatus("error");
       return;
     }
@@ -96,7 +96,7 @@ export default function EditCoc7CharacterPage({
 
   return (
     <main className="min-h-screen px-6 py-10">
-      <section className="mx-auto max-w-5xl rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <section className="mx-auto max-w-7xl">
         <Link
           className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
           href={`/characters/${characterId}`}
@@ -104,7 +104,7 @@ export default function EditCoc7CharacterPage({
           返回角色详情
         </Link>
         <h1 className="mt-3 text-3xl font-bold tracking-normal text-gray-950">
-          编辑 COC7 角色
+          编辑克苏鲁第七版调查员
         </h1>
 
         {status === "loading" ? (
@@ -113,7 +113,7 @@ export default function EditCoc7CharacterPage({
 
         {status === "missing-token" ? (
           <div className="mt-8 rounded-md bg-amber-50 p-4 text-sm text-amber-800">
-            <p>当前没有登录 token，请先登录。</p>
+            <p>当前没有登录凭证，请先登录。</p>
             <Link
               className="mt-3 inline-flex rounded-md bg-gray-950 px-4 py-2 font-medium text-white hover:bg-gray-800"
               href="/login"
@@ -137,7 +137,7 @@ export default function EditCoc7CharacterPage({
 
         {status === "wrong-rule" && character ? (
           <div className="mt-8 rounded-md bg-amber-50 p-4 text-sm text-amber-800">
-            <p>这个角色不是 COC7 角色，不能使用 COC7 表单编辑。</p>
+            <p>这个角色不是克苏鲁第七版角色，不能使用克苏鲁第七版表单编辑。</p>
             <Link
               className="mt-3 inline-flex rounded-md bg-gray-950 px-4 py-2 font-medium text-white hover:bg-gray-800"
               href={`/characters/${character.id}`}
@@ -157,7 +157,7 @@ export default function EditCoc7CharacterPage({
           <div className="mt-8">
             <Coc7CharacterForm
               initialData={toInitialData(character)}
-              submitLabel="保存 COC7 角色"
+              submitLabel="保存调查员"
               onSubmit={handleSubmit}
             />
           </div>

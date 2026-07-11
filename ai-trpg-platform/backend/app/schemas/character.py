@@ -15,7 +15,7 @@ class CharacterListItem(BaseModel):
     user_id: int
     rule_system: str
     name: str
-    summary: str
+    summary: dict[str, Any]
     created_at: datetime
     updated_at: datetime
 
