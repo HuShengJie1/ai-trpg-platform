@@ -7,10 +7,16 @@ import {
   type Coc7SkillCategory,
   type Coc7SkillDraft,
 } from "../../lib/coc7Skills";
+import styles from "./Coc7Theme.module.css";
 
 type Coc7SkillsEditorProps = {
   disabled: boolean;
   skills: Coc7SkillDraft[];
+  creditRange?: {
+    min: number;
+    max: number;
+    note: string | null;
+  } | null;
   onChange: (index: number, skill: Coc7SkillDraft) => void;
 };
 
@@ -20,6 +26,14 @@ function getHalf(value: number): number {
 
 function getFifth(value: number): number {
   return Math.floor(value / 5);
+}
+
+function getScoreFieldLabel(field: "occupation" | "interest" | "growth") {
+  return field === "occupation"
+    ? "职业"
+    : field === "interest"
+      ? "兴趣"
+      : "成长";
 }
 
 function SkillNameControl({
@@ -117,6 +131,7 @@ function ScoreInput({
 export default function Coc7SkillsEditor({
   disabled,
   skills,
+  creditRange,
   onChange,
 }: Coc7SkillsEditorProps) {
   const [activeCategory, setActiveCategory] = useState<Coc7SkillCategory>(
@@ -127,10 +142,10 @@ export default function Coc7SkillsEditor({
     .filter(({ skill }) => skill.category === activeCategory);
 
   return (
-    <div>
+    <div className={styles.skills}>
       <div
         aria-label="技能分类"
-        className="flex gap-2 overflow-x-auto border-b border-stone-300 pb-3"
+        className={`${styles.skillTabs} flex gap-2 overflow-x-auto border-b border-stone-300 pb-3`}
         role="tablist"
       >
         {coc7SkillCategories.map((category) => {
@@ -159,7 +174,9 @@ export default function Coc7SkillsEditor({
         })}
       </div>
 
-      <div className="mt-4 hidden overflow-x-auto rounded-md border border-stone-300 bg-white md:block">
+      <div
+        className={`${styles.skillTableWrap} mt-4 hidden overflow-x-auto rounded-md border border-stone-300 bg-white md:block`}
+      >
         <table className="min-w-[850px] w-full border-collapse text-left text-sm">
           <thead className="bg-stone-900 text-stone-100">
             <tr>
@@ -171,7 +188,8 @@ export default function Coc7SkillsEditor({
               <th className="px-3 py-2 text-center font-medium">总值</th>
               <th className="px-3 py-2 text-center font-medium">半值</th>
               <th className="px-3 py-2 text-center font-medium">五分之一</th>
-              <th className="px-3 py-2 text-center font-medium">标记</th>
+              <th className="px-3 py-2 text-center font-medium">本职</th>
+              <th className="px-3 py-2 text-center font-medium">成长标记</th>
             </tr>
           </thead>
           <tbody>
@@ -186,6 +204,16 @@ export default function Coc7SkillsEditor({
                       skill={skill}
                       onChange={(nextSkill) => onChange(index, nextSkill)}
                     />
+                    {skill.key === "credit_rating" && creditRange ? (
+                      <p className={`mt-1 text-xs ${
+                        total < creditRange.min || total > creditRange.max
+                          ? "text-red-700"
+                          : "text-emerald-700"
+                      }`}>
+                        职业范围 {creditRange.min}-{creditRange.max}
+                        {creditRange.note ? `（${creditRange.note}）` : ""}
+                      </p>
+                    ) : null}
                   </td>
                   <td className="px-3 py-2 text-center font-medium text-stone-700">
                     {skill.kind === "custom" ? (
@@ -204,7 +232,7 @@ export default function Coc7SkillsEditor({
                       <td key={field} className="px-3 py-2 text-center">
                         <ScoreInput
                           disabled={disabled}
-                          label={`${skill.name || skill.label}${field}`}
+                          label={`${skill.name || skill.label}${getScoreFieldLabel(field)}`}
                           value={skill[field]}
                           onChange={(value) =>
                             onChange(index, { ...skill, [field]: value })
@@ -221,6 +249,21 @@ export default function Coc7SkillsEditor({
                   </td>
                   <td className="px-3 py-2 text-center text-stone-700">
                     {getFifth(total)}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <input
+                      aria-label={`${skill.name || skill.label}本职技能`}
+                      checked={skill.isOccupation}
+                      className="h-4 w-4 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
+                      disabled={disabled}
+                      type="checkbox"
+                      onChange={(event) =>
+                        onChange(index, {
+                          ...skill,
+                          isOccupation: event.target.checked,
+                        })
+                      }
+                    />
                   </td>
                   <td className="px-3 py-2 text-center">
                     <input
@@ -251,14 +294,26 @@ export default function Coc7SkillsEditor({
           return (
             <article
               key={skill.key}
-              className="rounded-md border border-stone-300 bg-white p-3"
+              className={`${styles.skillMobileCard} rounded-md border border-stone-300 bg-white p-3`}
             >
               <SkillNameControl
                 disabled={disabled}
                 skill={skill}
                 onChange={(nextSkill) => onChange(index, nextSkill)}
               />
-              <dl className="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
+              {skill.key === "credit_rating" && creditRange ? (
+                <p className={`mt-2 text-xs ${
+                  total < creditRange.min || total > creditRange.max
+                    ? "text-red-700"
+                    : "text-emerald-700"
+                }`}>
+                  职业信用评级范围 {creditRange.min}-{creditRange.max}
+                  {creditRange.note ? `（${creditRange.note}）` : ""}
+                </p>
+              ) : null}
+              <dl
+                className={`${styles.skillMobileMetrics} mt-3 grid grid-cols-4 gap-2 text-center text-xs`}
+              >
                 <div className="rounded bg-stone-100 px-1 py-2">
                   <dt className="text-stone-500">基础</dt>
                   <dd className="mt-1 font-semibold text-stone-900">
@@ -282,7 +337,9 @@ export default function Coc7SkillsEditor({
                   </dd>
                 </div>
               </dl>
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div
+                className={`${styles.skillScoreGrid} mt-3 grid grid-cols-3 gap-2`}
+              >
                 {(["occupation", "interest", "growth"] as const).map(
                   (field) => (
                     <label key={field} className="text-xs text-stone-600">
@@ -292,6 +349,7 @@ export default function Coc7SkillsEditor({
                           ? "兴趣"
                           : "成长"}
                       <input
+                        aria-label={`${skill.name || skill.label}${getScoreFieldLabel(field)}`}
                         className="mt-1 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-center text-sm text-stone-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                         disabled={disabled}
                         min={0}
@@ -309,7 +367,24 @@ export default function Coc7SkillsEditor({
                   ),
                 )}
               </div>
-              <label className="mt-3 flex items-center gap-2 text-sm text-stone-700">
+              <div className="mt-3 flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm text-stone-700">
+                  <input
+                    aria-label={`${skill.name || skill.label}本职技能`}
+                    checked={skill.isOccupation}
+                    className="h-4 w-4 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
+                    disabled={disabled}
+                    type="checkbox"
+                    onChange={(event) =>
+                      onChange(index, {
+                        ...skill,
+                        isOccupation: event.target.checked,
+                      })
+                    }
+                  />
+                  本职技能
+                </label>
+                <label className="flex items-center gap-2 text-sm text-stone-700">
                 <input
                   checked={skill.checked}
                   className="h-4 w-4 rounded border-stone-300 text-emerald-700 focus:ring-emerald-600"
@@ -322,8 +397,9 @@ export default function Coc7SkillsEditor({
                     })
                   }
                 />
-                已标记
-              </label>
+                  成长标记
+                </label>
+              </div>
             </article>
           );
         })}

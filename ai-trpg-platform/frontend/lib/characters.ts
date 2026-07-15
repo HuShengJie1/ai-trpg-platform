@@ -5,10 +5,12 @@ import type {
   CharacterRead,
   Coc7CharacterCreate,
   Coc7CharacterUpdate,
+  Coc7Occupation,
   Dnd5eCharacterCreate,
   Dnd5eCharacterUpdate,
   SupportedRule,
 } from "../types/character";
+import { normalizeCoc7Occupation } from "./coc7Occupations";
 
 type CharacterRulesResponse = SupportedRule[] | { rules: SupportedRule[] };
 
@@ -38,6 +40,43 @@ export async function getCharacterRules(): Promise<SupportedRule[]> {
   });
 
   return normalizeRules(response);
+}
+
+export async function getCoc7Occupations(
+  search?: string,
+): Promise<Coc7Occupation[]> {
+  const token = getRequiredToken();
+  const query = search?.trim()
+    ? `?search=${encodeURIComponent(search.trim())}`
+    : "";
+  const response = await apiFetch<unknown>(
+    `/characters/coc7/occupations${query}`,
+    { method: "GET", token },
+  );
+  const values = Array.isArray(response)
+    ? response
+    : Array.isArray((response as { occupations?: unknown[] })?.occupations)
+      ? (response as { occupations: unknown[] }).occupations
+      : [];
+
+  return values.flatMap((value) => {
+    const occupation = normalizeCoc7Occupation(value);
+    return occupation ? [occupation] : [];
+  });
+}
+
+export async function getCoc7Occupation(id: number): Promise<Coc7Occupation> {
+  const token = getRequiredToken();
+  const response = await apiFetch<unknown>(`/characters/coc7/occupations/${id}`, {
+    method: "GET",
+    token,
+  });
+  const occupation = normalizeCoc7Occupation(response);
+  if (!occupation) {
+    throw new ApiError("职业资料格式不正确。", 500, response);
+  }
+
+  return occupation;
 }
 
 export async function createCoc7Character(

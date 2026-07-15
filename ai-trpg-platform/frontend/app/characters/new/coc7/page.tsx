@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Coc7CharacterForm from "../../../../components/characters/Coc7CharacterForm";
+import styles from "../../../../components/characters/Coc7Theme.module.css";
 import { createCoc7Character } from "../../../../lib/characters";
 import { getAccessToken } from "../../../../lib/auth";
 import type { Coc7CharacterCreate } from "../../../../types/character";
@@ -24,15 +25,17 @@ export default function NewCoc7CharacterPage() {
   };
 
   return (
-    <main className="min-h-screen px-6 py-10">
-      <section className="mx-auto max-w-7xl">
+    <main className={`${styles.page} min-h-screen px-4 py-8 sm:px-6 sm:py-10`}>
+      <section className={`${styles.pageShell} mx-auto max-w-7xl`}>
         <Link
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          className={`${styles.backLink} text-sm font-medium text-indigo-600 hover:text-indigo-500`}
           href="/characters/new"
         >
           返回规则选择
         </Link>
-        <h1 className="mt-3 text-3xl font-bold tracking-normal text-gray-950">
+        <h1
+          className={`${styles.pageTitle} mt-3 text-3xl font-bold tracking-normal text-gray-950`}
+        >
           创建克苏鲁第七版调查员
         </h1>
 

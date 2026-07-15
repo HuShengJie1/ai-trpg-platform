@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Coc7CharacterForm from "../../../../../components/characters/Coc7CharacterForm";
+import styles from "../../../../../components/characters/Coc7Theme.module.css";
 import { ApiError } from "../../../../../lib/api";
 import { asRecord, normalizeRuleSystem } from "../../../../../lib/characterDisplay";
 import {
@@ -95,15 +96,17 @@ export default function EditCoc7CharacterPage({
   };
 
   return (
-    <main className="min-h-screen px-6 py-10">
-      <section className="mx-auto max-w-7xl">
+    <main className={`${styles.page} min-h-screen px-4 py-8 sm:px-6 sm:py-10`}>
+      <section className={`${styles.pageShell} mx-auto max-w-7xl`}>
         <Link
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          className={`${styles.backLink} text-sm font-medium text-indigo-600 hover:text-indigo-500`}
           href={`/characters/${characterId}`}
         >
           返回角色详情
         </Link>
-        <h1 className="mt-3 text-3xl font-bold tracking-normal text-gray-950">
+        <h1
+          className={`${styles.pageTitle} mt-3 text-3xl font-bold tracking-normal text-gray-950`}
+        >
           编辑克苏鲁第七版调查员
         </h1>
 

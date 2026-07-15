@@ -26,9 +26,57 @@ export type CharacterRead = {
   updated_at: string;
 };
 
+export type Coc7OccupationAttribute =
+  | "str"
+  | "dex"
+  | "app"
+  | "pow"
+  | "edu";
+
+export type Coc7OccupationFormulaTerm =
+  | {
+      attribute: Coc7OccupationAttribute;
+      multiplier: number;
+    }
+  | {
+      choose_one: Coc7OccupationAttribute[];
+      multiplier: number;
+    };
+
+export type Coc7OccupationFormula = {
+  type: "fixed" | "sum" | "choice";
+  terms: Coc7OccupationFormulaTerm[];
+};
+
+export type Coc7Occupation = {
+  id: number;
+  name: string;
+  description: string;
+  skill_points_formula: string;
+  skill_points_formula_json: Coc7OccupationFormula;
+  credit_min: number;
+  credit_max: number;
+  credit_note: string | null;
+  occupation_skills: string[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Coc7OccupationPointCalculation = {
+  formula: string;
+  selected_attribute: Coc7OccupationAttribute | null;
+  selected_from: Coc7OccupationAttribute[];
+  calculation: string;
+  total: number;
+};
+
 export type Coc7CharacterCreate = {
   name: string;
-  occupation: string;
+  occupation?: string;
+  occupation_id: number | null;
+  occupation_skill_points: number;
+  personal_interest_points: number;
+  credit_rating: number;
   age: number;
   gender: string;
   residence: string;

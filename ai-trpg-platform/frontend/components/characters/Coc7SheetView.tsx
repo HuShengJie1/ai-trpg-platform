@@ -5,6 +5,10 @@ import {
   normalizeCoc7Skills,
 } from "../../lib/coc7Skills";
 import type { JsonRecord } from "../../types/character";
+import type { Coc7OccupationPointCalculation } from "../../types/character";
+import { normalizeCoc7Occupation } from "../../lib/coc7Occupations";
+import Coc7OccupationSummary from "./Coc7OccupationSummary";
+import styles from "./Coc7Theme.module.css";
 
 type FieldItem = {
   label: string;
@@ -83,7 +87,9 @@ function FieldGrid({
   record: JsonRecord;
 }) {
   return (
-    <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <dl
+      className={`${styles.sheetGrid} grid gap-3 sm:grid-cols-2 lg:grid-cols-3`}
+    >
       {items.map((item) => (
         <div key={item.key} className="rounded-md bg-gray-50 px-3 py-2">
           <dt className="text-xs text-gray-500">{item.label}</dt>
@@ -98,7 +104,9 @@ function FieldGrid({
 
 function DisplayGrid({ items }: { items: DisplayItem[] }) {
   return (
-    <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <dl
+      className={`${styles.sheetGrid} grid gap-3 sm:grid-cols-2 lg:grid-cols-3`}
+    >
       {items.map((item) => (
         <div key={item.label} className="rounded-md bg-gray-50 px-3 py-2">
           <dt className="text-xs text-gray-500">{item.label}</dt>
@@ -146,10 +154,12 @@ function SkillsSection({
   value,
   edu,
   dex,
+  interestPoints,
 }: {
   value: unknown;
   edu: number;
   dex: number;
+  interestPoints: unknown;
 }) {
   const record = parseRecord(value);
   const skills = normalizeCoc7Skills(record, edu, dex);
@@ -160,7 +170,7 @@ function SkillsSection({
     },
     {
       label: "兴趣点数",
-      value: displayNumber(record.interest_points),
+      value: displayNumber(interestPoints, displayNumber(record.interest_points)),
     },
     {
       label: "技能上限",
@@ -189,7 +199,9 @@ function SkillsSection({
               <h4 className="border-b border-gray-200 pb-2 text-sm font-semibold text-gray-800">
                 {category}
               </h4>
-              <div className="mt-2 overflow-x-auto rounded-md border border-gray-200">
+              <div
+                className={`${styles.sheetTableWrap} mt-2 overflow-x-auto rounded-md border border-gray-200`}
+              >
                 <table className="min-w-[780px] w-full border-collapse text-left text-sm">
                   <thead className="bg-gray-100 text-gray-700">
                     <tr>
@@ -203,7 +215,8 @@ function SkillsSection({
                       <th className="px-3 py-2 text-center font-medium">
                         五分之一
                       </th>
-                      <th className="px-3 py-2 text-center font-medium">标记</th>
+                      <th className="px-3 py-2 text-center font-medium">本职</th>
+                      <th className="px-3 py-2 text-center font-medium">成长标记</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -238,6 +251,9 @@ function SkillsSection({
                           </td>
                           <td className="px-3 py-2 text-center text-gray-700">
                             {getFifth(total)}
+                          </td>
+                          <td className="px-3 py-2 text-center text-gray-700">
+                            {skill.isOccupation ? "是" : "否"}
                           </td>
                           <td className="px-3 py-2 text-center text-gray-700">
                             {skill.checked ? "是" : "否"}
@@ -304,7 +320,9 @@ function EquipmentSection({ value }: { value: unknown }) {
       </div>
       <h4 className="mt-5 text-sm font-medium text-gray-700">武器</h4>
       {weapons.length > 0 ? (
-        <div className="mt-2 overflow-x-auto rounded-md border border-gray-200">
+        <div
+          className={`${styles.sheetTableWrap} mt-2 overflow-x-auto rounded-md border border-gray-200`}
+        >
           <table className="min-w-[760px] w-full border-collapse text-left text-sm">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
@@ -430,10 +448,22 @@ function StatusSection({ value }: { value: unknown }) {
 
 export default function Coc7SheetView({ sheet }: Coc7SheetViewProps) {
   const record = parseRecord(sheet);
+  const occupationIdValue = Number(record.occupation_id);
+  const occupationId =
+    Number.isInteger(occupationIdValue) && occupationIdValue > 0
+      ? occupationIdValue
+      : null;
+  const embeddedOccupation = normalizeCoc7Occupation(
+    record.occupation_info ?? record.occupation_data ?? record.occupation_record,
+  );
+  const pointDetailRecord = parseRecord(record.occupation_skill_points_detail);
+  const pointCalculation = pointDetailRecord.calculation
+    ? (pointDetailRecord as Coc7OccupationPointCalculation)
+    : null;
 
   return (
-    <div className="space-y-8">
-      <section>
+    <div className={`${styles.sheet} space-y-8`}>
+      <section className={styles.sheetPrimary}>
         <h3 className="text-base font-semibold text-gray-950">基础信息</h3>
         <div className="mt-3">
           <FieldGrid
@@ -447,10 +477,17 @@ export default function Coc7SheetView({ sheet }: Coc7SheetViewProps) {
               { label: "背景年代", key: "background" },
             ]}
           />
+          <Coc7OccupationSummary
+            calculation={pointCalculation}
+            initialOccupation={embeddedOccupation}
+            occupationId={occupationId}
+            occupationName={displayText(record.occupation, "")}
+            occupationPoints={Number(record.occupation_skill_points) || 0}
+          />
         </div>
       </section>
 
-      <section>
+      <section className={styles.sheetAttributes}>
         <h3 className="text-base font-semibold text-gray-950">属性</h3>
         <div className="mt-3">
           <FieldGrid
@@ -470,7 +507,7 @@ export default function Coc7SheetView({ sheet }: Coc7SheetViewProps) {
         </div>
       </section>
 
-      <section>
+      <section className={styles.sheetDerived}>
         <h3 className="text-base font-semibold text-gray-950">衍生属性</h3>
         <div className="mt-3">
           <FieldGrid
@@ -492,6 +529,7 @@ export default function Coc7SheetView({ sheet }: Coc7SheetViewProps) {
         value={record.skills_json}
         edu={Number(record.edu) || 0}
         dex={Number(record.dex) || 0}
+        interestPoints={record.personal_interest_points}
       />
       <EquipmentSection value={record.equipment_json} />
       <BackstorySection value={record.backstory_json} />

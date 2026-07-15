@@ -32,13 +32,14 @@ export type Coc7SkillDraft = {
   interest: number;
   growth: number;
   checked: boolean;
+  isOccupation: boolean;
   specialization: string;
   options: Coc7SkillOption[];
 };
 
 type SkillTemplate = Omit<
   Coc7SkillDraft,
-  "name" | "occupation" | "interest" | "growth" | "checked"
+  "name" | "occupation" | "interest" | "growth" | "checked" | "isOccupation"
 > & {
   defaultSpecialization?: string;
 };
@@ -413,6 +414,7 @@ export function normalizeCoc7Skills(
       interest: asNumber(saved.interest),
       growth: asNumber(saved.growth),
       checked: saved.checked === true,
+      isOccupation: saved.is_occupation === true,
       specialization,
       options: template.options,
     };
@@ -437,6 +439,7 @@ export function normalizeCoc7Skills(
       interest: 0,
       growth: 0,
       checked: false,
+      isOccupation: false,
       specialization: "",
       options: [],
     }));
@@ -458,6 +461,7 @@ export function normalizeCoc7Skills(
       interest: asNumber(skill.interest),
       growth: asNumber(skill.growth),
       checked: skill.checked === true,
+      isOccupation: skill.is_occupation === true,
       specialization: "",
       options: [],
     }));

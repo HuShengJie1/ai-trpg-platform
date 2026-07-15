@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Coc7SheetView from "../../../components/characters/Coc7SheetView";
+import styles from "../../../components/characters/Coc7Theme.module.css";
 import Dnd5eSheetView from "../../../components/characters/Dnd5eSheetView";
 import { ApiError } from "../../../lib/api";
 import {
@@ -87,26 +88,62 @@ export default function CharacterDetailPage({ params }: CharacterDetailPageProps
   const editPath = character
     ? getCharacterEditPath(character.id, character.rule_system)
     : null;
+  const isCoc7 =
+    status === "ready" &&
+    character?.id === characterId &&
+    normalizeRuleSystem(character.rule_system) === "coc7";
 
   return (
-    <main className="min-h-screen px-6 py-10">
-      <section className="mx-auto max-w-5xl rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <main
+      className={
+        isCoc7
+          ? `${styles.page} min-h-screen px-4 py-8 sm:px-6 sm:py-10`
+          : "min-h-screen px-6 py-10"
+      }
+    >
+      <section
+        className={
+          isCoc7
+            ? `${styles.detailShell} mx-auto max-w-7xl`
+            : "mx-auto max-w-5xl rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+        }
+      >
+        <div
+          className={
+            isCoc7
+              ? `${styles.detailHeader} flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between`
+              : "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+          }
+        >
           <div>
             <Link
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              className={
+                isCoc7
+                  ? `${styles.backLink} text-sm font-medium text-indigo-600 hover:text-indigo-500`
+                  : "text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              }
               href="/characters"
             >
               返回角色列表
             </Link>
-            <h1 className="mt-3 text-3xl font-bold tracking-normal text-gray-950">
+            <h1
+              className={
+                isCoc7
+                  ? `${styles.pageTitle} mt-3 text-3xl font-bold tracking-normal text-gray-950`
+                  : "mt-3 text-3xl font-bold tracking-normal text-gray-950"
+              }
+            >
               {character?.name ?? "角色详情"}
             </h1>
           </div>
 
           {editPath ? (
             <Link
-              className="inline-flex w-fit rounded-md bg-gray-950 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              className={
+                isCoc7
+                  ? `${styles.detailEditLink} inline-flex w-fit rounded-md bg-gray-950 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800`
+                  : "inline-flex w-fit rounded-md bg-gray-950 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              }
               href={editPath}
             >
               编辑角色
@@ -150,7 +187,13 @@ export default function CharacterDetailPage({ params }: CharacterDetailPageProps
 
         {status === "ready" && character ? (
           <div className="mt-8 space-y-8">
-            <dl className="grid gap-3 sm:grid-cols-3">
+            <dl
+              className={
+                isCoc7
+                  ? `${styles.detailMeta} grid gap-3 sm:grid-cols-3`
+                  : "grid gap-3 sm:grid-cols-3"
+              }
+            >
               <div className="rounded-md bg-gray-50 px-3 py-2">
                 <dt className="text-xs text-gray-500">规则</dt>
                 <dd className="mt-1 text-sm font-medium text-gray-900">
